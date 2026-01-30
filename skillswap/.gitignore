@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Python
 __pycache__/
 *.py[cod]
@@ -16,12 +15,3 @@ db.sqlite3
 # IDE files
 *.vscode/
 *.idea/
-=======
-venv/
-.venv/
-__pycache__/
-db.sqlite3
-*.pyc
-.env
-.vscode/
->>>>>>> 69bd20a93a8aeed031a4e758712ceceaa9fce359
