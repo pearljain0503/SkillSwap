@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from django.template import loader
 
 def home(request):
-    return render(request, 'member/index.html')  # EXACT folder name
+    return render(request, 'index.html') # EXACT folder name
 
 def members(request) :
     return HttpResponse("Hello world")

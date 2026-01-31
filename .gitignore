@@ -1,27 +1,21 @@
-<<<<<<< HEAD
 # Python
 __pycache__/
 *.py[cod]
+*.pyc
 
 # Virtual environment
 venv/
+.venv/
 
 # Database
 db.sqlite3
 
-# Django migrations
-*/migrations/*.py
-*/migrations/*.pyc
+# Static collected files
+staticfiles/
 
-# IDE files
-*.vscode/
-*.idea/
-=======
-venv/
-.venv/
-__pycache__/
-db.sqlite3
-*.pyc
+# Env files
 .env
+
+# IDE
 .vscode/
->>>>>>> 69bd20a93a8aeed031a4e758712ceceaa9fce359
+.idea/
