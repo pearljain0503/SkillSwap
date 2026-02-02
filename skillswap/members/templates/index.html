@@ -1,341 +1,889 @@
-<!doctype html>
+{% load static %}
+<!DOCTYPE html>
 <html lang="en" class="h-full">
- <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SkillSwap</title>
-  <script src="/_sdk/element_sdk.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="style.css">
-  <style>@view-transition { navigation: auto; }</style>
-  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
- </head>
- <body class="h-full">
-  <div class="app-wrapper gradient-mesh" id="app-wrapper"><!-- Auth Modal -->
-   <div class="modal-overlay" id="auth-modal">
-    <div class="modal-content">
-     <div class="auth-modal-inner flex" style="flex-direction: row;"><!-- Login Side -->
-      <div class="flex-1 p-8 border-r border-white/5">
-       <div class="mb-8">
-        <h2 class="text-2xl font-bold mb-2" id="login-title">Welcome Back</h2>
-        <p class="text-sm opacity-60">Sign in to continue to SkillSwap</p>
-       </div>
-       <form id="login-form" class="space-y-4">
-        <div><label for="login-email" class="block text-sm font-medium mb-2">Email</label> <input type="email" id="login-email" class="input-field" placeholder="you@example.com">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SkillSwap</title>
+    <!-- <script src="/_sdk/element_sdk.js"></script> -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap"
+      rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      defer></script>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+    <!-- <style> @view-transition { navigation: auto; }</style> -->
+    <script src="{% static 'js/script.js' %}"></script>
+  </head>
+  <body class="h-full">
+    <div class="app-wrapper gradient-mesh" id="app-wrapper">
+      <!-- Auth Modal -->
+      <div class="modal-overlay" id="auth-modal">
+        <div class="modal-content">
+          <div class="auth-modal-inner flex" style="flex-direction: row">
+            <!-- Login Side -->
+            <div class="flex-1 p-8 border-r border-white/5">
+              <div class="mb-8">
+                <h2 class="text-2xl font-bold mb-2" id="login-title">
+                  Welcome Back
+                </h2>
+                <p class="text-sm opacity-60">
+                  Sign in to continue to SkillSwap
+                </p>
+              </div>
+              <form id="login-form" class="space-y-4">
+                <div>
+                  <label
+                    for="login-email"
+                    class="block text-sm font-medium mb-2"
+                    >Email</label
+                  >
+                  <input
+                    type="email"
+                    id="login-email"
+                    class="input-field"
+                    placeholder="you@example.com" />
+                </div>
+                <div>
+                  <label
+                    for="login-password"
+                    class="block text-sm font-medium mb-2"
+                    >Password</label
+                  >
+                  <input
+                    type="password"
+                    id="login-password"
+                    class="input-field"
+                    placeholder="••••••••" />
+                </div>
+                <div id="login-error" class="text-red-400 text-sm hidden"></div>
+                <button type="submit" class="btn btn-primary w-full">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewbox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2">
+                    <path
+                      d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3" />
+                  </svg>
+                  Sign In
+                </button>
+              </form>
+              <div class="mt-6 text-center">
+                <p class="text-sm opacity-60">
+                  Demo credentials: demo@skillswap.com / demo123
+                </p>
+              </div>
+            </div>
+            <!-- Signup Side -->
+            <div
+              class="flex-1 p-8"
+              style="background: rgba(99, 102, 241, 0.02)">
+              <div class="mb-8">
+                <h2 class="text-2xl font-bold mb-2">Create Account</h2>
+                <p class="text-sm opacity-60">
+                  Join the skill exchange community
+                </p>
+              </div>
+              <form id="signup-form" class="space-y-4">
+                <div>
+                  <label
+                    for="signup-name"
+                    class="block text-sm font-medium mb-2"
+                    >Full Name</label
+                  >
+                  <input
+                    type="text"
+                    id="signup-name"
+                    class="input-field"
+                    placeholder="John Doe" />
+                </div>
+                <div>
+                  <label
+                    for="signup-email"
+                    class="block text-sm font-medium mb-2"
+                    >Email</label
+                  >
+                  <input
+                    type="email"
+                    id="signup-email"
+                    class="input-field"
+                    placeholder="you@example.com" />
+                </div>
+                <div>
+                  <label
+                    for="signup-password"
+                    class="block text-sm font-medium mb-2"
+                    >Password</label
+                  >
+                  <input
+                    type="password"
+                    id="signup-password"
+                    class="input-field"
+                    placeholder="••••••••" />
+                </div>
+                <div class="flex items-start gap-3">
+                  <input type="checkbox" id="signup-terms" class="mt-1" />
+                  <label for="signup-terms" class="text-sm opacity-70"
+                    >I agree to the Terms of Service and Privacy Policy</label
+                  >
+                </div>
+                <div
+                  id="signup-error"
+                  class="text-red-400 text-sm hidden"></div>
+                <button type="submit" class="btn btn-secondary w-full">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewbox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="8.5" cy="7" r="4" />
+                    <line x1="20" y1="8" x2="20" y2="14" />
+                    <line x1="23" y1="11" x2="17" y2="11" />
+                  </svg>
+                  Create Account
+                </button>
+              </form>
+            </div>
+          </div>
         </div>
-        <div><label for="login-password" class="block text-sm font-medium mb-2">Password</label> <input type="password" id="login-password" class="input-field" placeholder="••••••••">
-        </div>
-        <div id="login-error" class="text-red-400 text-sm hidden"></div><button type="submit" class="btn btn-primary w-full">
-         <svg width="18" height="18" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3" />
-         </svg> Sign In </button>
-       </form>
-       <div class="mt-6 text-center">
-        <p class="text-sm opacity-60">Demo credentials: demo@skillswap.com / demo123</p>
-       </div>
-      </div><!-- Signup Side -->
-      <div class="flex-1 p-8" style="background: rgba(99, 102, 241, 0.02);">
-       <div class="mb-8">
-        <h2 class="text-2xl font-bold mb-2">Create Account</h2>
-        <p class="text-sm opacity-60">Join the skill exchange community</p>
-       </div>
-       <form id="signup-form" class="space-y-4">
-        <div><label for="signup-name" class="block text-sm font-medium mb-2">Full Name</label> <input type="text" id="signup-name" class="input-field" placeholder="John Doe">
-        </div>
-        <div><label for="signup-email" class="block text-sm font-medium mb-2">Email</label> <input type="email" id="signup-email" class="input-field" placeholder="you@example.com">
-        </div>
-        <div><label for="signup-password" class="block text-sm font-medium mb-2">Password</label> <input type="password" id="signup-password" class="input-field" placeholder="••••••••">
-        </div>
-        <div class="flex items-start gap-3"><input type="checkbox" id="signup-terms" class="mt-1"> <label for="signup-terms" class="text-sm opacity-70">I agree to the Terms of Service and Privacy Policy</label>
-        </div>
-        <div id="signup-error" class="text-red-400 text-sm hidden"></div><button type="submit" class="btn btn-secondary w-full">
-         <svg width="18" height="18" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /> <circle cx="8.5" cy="7" r="4" /> <line x1="20" y1="8" x2="20" y2="14" /> <line x1="23" y1="11" x2="17" y2="11" />
-         </svg> Create Account </button>
-       </form>
       </div>
-     </div>
-    </div>
-   </div><!-- Mobile Menu -->
-   <nav class="mobile-menu" id="mobile-menu"><button class="nav-item mobile-nav-item text-left" data-page="dashboard"> <span class="flex items-center gap-3">
-      <svg width="20" height="20" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" /> <rect x="14" y="3" width="7" height="7" /> <rect x="14" y="14" width="7" height="7" /> <rect x="3" y="14" width="7" height="7" />
-      </svg> Dashboard </span> </button> <button class="nav-item mobile-nav-item text-left" data-page="find-skill"> <span class="flex items-center gap-3">
-      <svg width="20" height="20" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8" /> <path d="m21 21-4.35-4.35" />
-      </svg> Find a Skill </span> </button> <button class="nav-item mobile-nav-item text-left" data-page="offer-skill"> <span class="flex items-center gap-3">
-      <svg width="20" height="20" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20" />
-      </svg> Offer a Skill </span> </button> <button class="nav-item mobile-nav-item text-left" data-page="requests"> <span class="flex items-center gap-3">
-      <svg width="20" height="20" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-      </svg> Requests </span> </button> <button class="nav-item mobile-nav-item text-left" data-page="messages"> <span class="flex items-center gap-3">
-      <svg width="20" height="20" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-      </svg> Messages </span> </button>
-   </nav><!-- Topbar -->
-   <header class="topbar">
-    <div class="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto"><!-- Left: Logo -->
-     <div class="flex items-center gap-3"><button class="mobile-menu-btn p-2 rounded-lg hover:bg-white/5 lg:hidden" id="mobile-menu-btn" style="display: none;" aria-label="Toggle menu">
-       <svg width="24" height="24" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12" /> <line x1="3" y1="6" x2="21" y2="6" /> <line x1="3" y1="18" x2="21" y2="18" />
-       </svg></button>
-      <div class="flex items-center gap-2">
-       <div class="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-        <svg width="18" height="18" viewbox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /> <circle cx="9" cy="7" r="4" /> <path d="M23 21v-2a4 4 0 0 0-3-3.87" /> <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-        </svg>
-       </div><span class="font-bold text-lg hidden sm:block" id="app-title-text">SkillSwap Local</span>
-      </div>
-     </div><!-- Center: Navigation -->
-     <nav class="desktop-nav flex items-center gap-1 hidden md:flex"><button class="nav-item active" data-page="dashboard">Dashboard</button> <button class="nav-item" data-page="find-skill">Find a Skill</button> <button class="nav-item" data-page="offer-skill">Offer a Skill</button> <button class="nav-item" data-page="requests">Requests</button> <button class="nav-item" data-page="messages">Messages</button>
-     </nav><!-- Right: Credits & User -->
-     <div class="flex items-center gap-3"><!-- Credits -->
-      <div class="pill glass">
-       <svg width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /> <path d="M12 6v12M8 10h8M8 14h8" />
-       </svg><span id="total-credits">25</span> <span class="opacity-50">|</span> <span class="text-yellow-400" id="pending-credits">+3</span>
-      </div><!-- User -->
-      <div class="flex items-center gap-2">
-       <div class="avatar" id="user-avatar">
-        D
-       </div><span class="font-medium hidden sm:block" id="user-name-display">Demo User</span> <button class="btn-ghost px-2 py-1 rounded-lg text-sm" id="logout-btn">
-        <svg width="16" height="16" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /> <polyline points="16,17 21,12 16,7" /> <line x1="21" y1="12" x2="9" y2="12" />
-        </svg></button>
-      </div>
-     </div>
-    </div>
-   </header><!-- Main Content -->
-   <main class="flex-1 overflow-auto p-4 md:p-6">
-    <div class="max-w-7xl mx-auto"><!-- Dashboard Page -->
-     <section class="page active" id="page-dashboard">
-      <div class="mb-8 animate-fade-in">
-       <h1 class="text-3xl font-bold mb-2" id="welcome-text">Welcome back, <span id="dashboard-user-name">Demo User</span></h1>
-       <p class="opacity-60" id="tagline-text">You have <span class="text-yellow-400" id="pending-requests-count">3</span> pending requests</p>
-      </div><!-- Hero Cards -->
-      <div class="hero-cards grid grid-cols-2 gap-4 mb-8" style="animation-delay: 0.1s;">
-       <div class="hero-card gradient-primary cursor-pointer hover:scale-[1.02] transition-transform" onclick="navigateTo('offer-skill')">
-        <div class="relative z-10">
-         <svg width="48" height="48" viewbox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" class="mb-4 opacity-80"><circle cx="12" cy="12" r="10" /> <path d="M12 8v8M8 12h8" />
-         </svg>
-         <h3 class="text-xl font-bold mb-2">Offer a Skill</h3>
-         <p class="opacity-80 text-sm mb-4">Share your expertise with the community</p><span class="btn btn-ghost">Get Started →</span>
+      <!-- Mobile Menu -->
+      <nav class="mobile-menu" id="mobile-menu">
+        <button
+          class="nav-item mobile-nav-item text-left"
+          data-page="dashboard">
+          <span class="flex items-center gap-3">
+            <svg
+              width="20"
+              height="20"
+              viewbox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2">
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+            </svg>
+            Dashboard
+          </span>
+        </button>
+        <button
+          class="nav-item mobile-nav-item text-left"
+          data-page="find-skill">
+          <span class="flex items-center gap-3">
+            <svg
+              width="20"
+              height="20"
+              viewbox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+            Find a Skill
+          </span>
+        </button>
+        <button
+          class="nav-item mobile-nav-item text-left"
+          data-page="offer-skill">
+          <span class="flex items-center gap-3">
+            <svg
+              width="20"
+              height="20"
+              viewbox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2">
+              <path d="M12 2v20M2 12h20" />
+            </svg>
+            Offer a Skill
+          </span>
+        </button>
+        <button class="nav-item mobile-nav-item text-left" data-page="requests">
+          <span class="flex items-center gap-3">
+            <svg
+              width="20"
+              height="20"
+              viewbox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+            </svg>
+            Requests
+          </span>
+        </button>
+        <button class="nav-item mobile-nav-item text-left" data-page="messages">
+          <span class="flex items-center gap-3">
+            <svg
+              width="20"
+              height="20"
+              viewbox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2">
+              <path
+                d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            Messages
+          </span>
+        </button>
+      </nav>
+      <!-- Topbar -->
+      <header class="topbar">
+        <div
+          class="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto">
+          <!-- Left: Logo -->
+          <div class="flex items-center gap-3">
+            <button
+              class="mobile-menu-btn p-2 rounded-lg hover:bg-white/5 lg:hidden"
+              id="mobile-menu-btn"
+              style="display: none"
+              aria-label="Toggle menu">
+              <svg
+                width="24"
+                height="24"
+                viewbox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2">
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+            <div class="flex items-center gap-2">
+              <div
+                class="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
+                <svg
+                  width="18"
+                  height="18"
+                  viewbox="0 0 24 24"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2.5">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+              </div>
+              <span
+                class="font-bold text-lg hidden sm:block"
+                id="app-title-text"
+                >SkillSwap Local</span
+              >
+            </div>
+          </div>
+          <!-- Center: Navigation -->
+          <nav class="desktop-nav flex items-center gap-1 hidden md:flex">
+            <button class="nav-item active" data-page="dashboard">
+              Dashboard
+            </button>
+            <button class="nav-item" data-page="find-skill">
+              Find a Skill
+            </button>
+            <button class="nav-item" data-page="offer-skill">
+              Offer a Skill
+            </button>
+            <button class="nav-item" data-page="requests">Requests</button>
+            <button class="nav-item" data-page="messages">Messages</button>
+          </nav>
+          <!-- Right: Credits & User -->
+          <div class="flex items-center gap-3">
+            <!-- Credits -->
+            <div class="pill glass">
+              <svg
+                width="14"
+                height="14"
+                viewbox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 6v12M8 10h8M8 14h8" /></svg
+              ><span id="total-credits">25</span>
+              <span class="opacity-50">|</span>
+              <span class="text-yellow-400" id="pending-credits">+3</span>
+            </div>
+            <!-- User -->
+            <div class="flex items-center gap-2">
+              <div class="avatar" id="user-avatar">D</div>
+              <span class="font-medium hidden sm:block" id="user-name-display"
+                >Demo User</span
+              >
+              <button
+                class="btn-ghost px-2 py-1 rounded-lg text-sm"
+                id="logout-btn">
+                <svg
+                  width="16"
+                  height="16"
+                  viewbox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16,17 21,12 16,7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
-       </div>
-       <div class="hero-card gradient-secondary cursor-pointer hover:scale-[1.02] transition-transform" onclick="navigateTo('find-skill')">
-        <div class="relative z-10">
-         <svg width="48" height="48" viewbox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" class="mb-4 opacity-80"><circle cx="11" cy="11" r="8" /> <path d="m21 21-4.35-4.35" />
-         </svg>
-         <h3 class="text-xl font-bold mb-2">Find a Skill</h3>
-         <p class="opacity-80 text-sm mb-4">Learn something new from neighbors</p><span class="btn btn-ghost">Explore →</span>
-        </div>
-       </div>
-      </div><!-- Dashboard Grid -->
-      <div class="dashboard-grid grid grid-cols-3 gap-6" style="animation-delay: 0.2s;"><!-- My Offered Skills -->
-       <div class="col-span-2 card p-6">
-        <div class="flex items-center justify-between mb-6">
-         <h3 class="text-lg font-semibold">My Offered Skills</h3><button class="btn btn-ghost text-sm" onclick="navigateTo('offer-skill')">+ Add New</button>
-        </div>
-        <div id="my-skills-list"><!-- Skills will be rendered here -->
-        </div>
-        <div id="my-skills-empty" class="empty-state hidden">
-         <svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mx-auto"><path d="M12 2v20M2 12h20" />
-         </svg>
-         <p>You haven't offered any skills yet</p><button class="btn btn-primary mt-4" onclick="navigateTo('offer-skill')">Offer Your First Skill</button>
-        </div>
-       </div><!-- Quick Stats -->
-       <div class="card p-6">
-        <h3 class="text-lg font-semibold mb-6">Quick Stats</h3>
-        <div class="space-y-4">
-         <div class="stat-card">
-          <div class="text-3xl font-bold text-primary-color" id="stat-offers">
-           5
-          </div>
-          <div class="text-sm opacity-60">
-           Active Offers
-          </div>
-         </div>
-         <div class="stat-card">
-          <div class="text-3xl font-bold text-cyan-400" id="stat-requests">
-           8
-          </div>
-          <div class="text-sm opacity-60">
-           Total Requests
-          </div>
-         </div>
-         <div class="stat-card">
-          <div class="text-3xl font-bold text-green-400" id="stat-completed">
-           12
-          </div>
-          <div class="text-sm opacity-60">
-           Completed Sessions
-          </div>
-         </div>
-        </div>
-       </div>
-      </div>
-     </section><!-- Find a Skill Page -->
-     <section class="page" id="page-find-skill">
-      <div class="mb-6 animate-fade-in">
-       <h1 class="text-3xl font-bold mb-2">Find a Skill</h1>
-       <p class="opacity-60">Discover skills offered by people in your community</p>
-      </div>
-      <div class="flex gap-6 flex-col lg:flex-row"><!-- Sidebar Filters -->
-       <div class="sidebar w-full lg:w-80 space-y-6 flex-shrink-0">
-        <div class="card p-5">
-         <h4 class="font-semibold mb-4">Search</h4>
-         <div class="relative">
-          <svg class="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" width="18" height="18" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8" /> <path d="m21 21-4.35-4.35" />
-          </svg><input type="text" id="search-input" class="input-field pl-10" placeholder="What do you want to learn?">
-         </div>
-        </div>
-        <div class="card p-5">
-         <h4 class="font-semibold mb-4">Distance</h4>
-         <div class="space-y-3"><input type="range" id="distance-slider" class="range-slider" min="1" max="50" value="10">
-          <div class="flex justify-between text-sm opacity-60"><span>1 km</span> <span id="distance-value" class="font-medium text-primary-color">10 km</span> <span>50 km</span>
-          </div>
-         </div>
-        </div>
-        <div class="card p-5">
-         <h4 class="font-semibold mb-4">Category</h4>
-         <div class="flex flex-wrap gap-2" id="category-chips"><button class="chip active" data-category="all">All</button> <button class="chip" data-category="education">Education</button> <button class="chip" data-category="technology">Technology</button> <button class="chip" data-category="arts">Arts</button> <button class="chip" data-category="wellness">Wellness</button> <button class="chip" data-category="home">Home</button>
-         </div>
-        </div>
-        <div class="card p-5">
-         <h4 class="font-semibold mb-4">Availability</h4>
-         <div class="space-y-4">
-          <div class="flex items-center justify-between"><span class="text-sm">Available now</span>
-           <div class="toggle" id="toggle-available"></div>
-          </div>
-          <div class="flex items-center justify-between"><span class="text-sm">Weekend only</span>
-           <div class="toggle" id="toggle-weekend"></div>
-          </div>
-         </div>
-        </div>
-       </div><!-- Main Content -->
-       <div class="flex-1 space-y-6"><!-- Map Placeholder -->
-        <div class="map-placeholder h-48 md:h-64 flex items-center justify-center relative">
-         <div class="map-pin" style="top: 30%; left: 45%;"></div>
-         <div class="map-pin" style="top: 50%; left: 60%;"></div>
-         <div class="map-pin" style="top: 65%; left: 30%;"></div>
-         <div class="absolute inset-0 flex items-center justify-center">
-          <div class="glass px-4 py-2 rounded-lg text-sm"><span class="opacity-60">🗺️ Map View</span> <span class="font-medium ml-2" id="skills-count">12 skills nearby</span>
-          </div>
-         </div>
-        </div><!-- Skills Grid -->
-        <div>
-         <h3 class="font-semibold mb-4">Nearby Skills</h3>
-         <div class="grid gap-4" id="skills-grid"><!-- Skills will be rendered here -->
-         </div>
-        </div>
-       </div>
-      </div>
-     </section><!-- Offer a Skill Page -->
-     <section class="page" id="page-offer-skill">
-      <div class="mb-6 animate-fade-in">
-       <h1 class="text-3xl font-bold mb-2">Offer a Skill</h1>
-       <p class="opacity-60">Share your expertise with people in your community</p>
-      </div>
-      <div class="w-full">
-       <div class="card p-8 w-full">
-        <form id="offer-form" class="space-y-6">
-         <div><label for="offer-category" class="block text-sm font-medium mb-2">Category</label> <select id="offer-category" class="input-field"> <option value="">Select a category</option> <option value="education">Education</option> <option value="technology">Technology</option> <option value="arts">Arts</option> <option value="wellness">Wellness</option> <option value="home">Home</option> </select>
-         </div>
-         <div><label for="offer-title" class="block text-sm font-medium mb-2">Skill Title</label> <input type="text" id="offer-title" class="input-field" placeholder="e.g., Guitar Lessons, Web Development">
-         </div>
-         <div><label for="offer-description" class="block text-sm font-medium mb-2">Description</label> <textarea id="offer-description" class="input-field" rows="4" placeholder="Describe what you'll teach and your experience..." maxlength="500"></textarea>
-          <div class="char-counter" id="description-counter">
-           0/500
-          </div>
-         </div>
-         <div><label class="block text-sm font-medium mb-3">Experience Level</label>
-          <div class="space-y-3"><input type="range" id="experience-slider" class="range-slider" min="1" max="5" value="3">
-           <div class="flex justify-between text-sm"><span class="opacity-60">Novice</span> <span id="experience-value" class="font-medium text-primary-color">Intermediate</span> <span class="opacity-60">Expert</span>
-           </div>
-          </div>
-         </div>
-         <div class="grid grid-cols-2 gap-4">
-          <div><label for="offer-rate" class="block text-sm font-medium mb-2">Credits/Hour</label> 
-           
-            <input type="number" id="offer-rate" class="input-field" value="1" disabled>
+      </header>
+      <!-- Main Content -->
+      <main class="flex-1 overflow-auto p-4 md:p-6">
+        <div class="max-w-7xl mx-auto">
+          <!-- Dashboard Page -->
+          <section class="page active" id="page-dashboard">
+            <div class="mb-8 animate-fade-in">
+              <h1 class="text-3xl font-bold mb-2" id="welcome-text">
+                Welcome back, <span id="dashboard-user-name">Demo User</span>
+              </h1>
+              <p class="opacity-60" id="tagline-text">
+                You have
+                <span class="text-yellow-400" id="pending-requests-count"
+                  >3</span
+                >
+                pending requests
+              </p>
+            </div>
+            <!-- Hero Cards -->
+            <div
+              class="hero-cards grid grid-cols-2 gap-4 mb-8"
+              style="animation-delay: 0.1s">
+              <div
+                class="hero-card gradient-primary cursor-pointer hover:scale-[1.02] transition-transform"
+                onclick="navigateTo('offer-skill')">
+                <div class="relative z-10">
+                  <svg
+                    width="48"
+                    height="48"
+                    viewbox="0 0 24 24"
+                    fill="none"
+                    stroke="white"
+                    stroke-width="1.5"
+                    class="mb-4 opacity-80">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 8v8M8 12h8" />
+                  </svg>
+                  <h3 class="text-xl font-bold mb-2">Offer a Skill</h3>
+                  <p class="opacity-80 text-sm mb-4">
+                    Share your expertise with the community
+                  </p>
+                  <span class="btn btn-ghost">Get Started →</span>
+                </div>
+              </div>
+              <div
+                class="hero-card gradient-secondary cursor-pointer hover:scale-[1.02] transition-transform"
+                onclick="navigateTo('find-skill')">
+                <div class="relative z-10">
+                  <svg
+                    width="48"
+                    height="48"
+                    viewbox="0 0 24 24"
+                    fill="none"
+                    stroke="white"
+                    stroke-width="1.5"
+                    class="mb-4 opacity-80">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                  </svg>
+                  <h3 class="text-xl font-bold mb-2">Find a Skill</h3>
+                  <p class="opacity-80 text-sm mb-4">
+                    Learn something new from neighbors
+                  </p>
+                  <span class="btn btn-ghost">Explore →</span>
+                </div>
+              </div>
+            </div>
+            <!-- Dashboard Grid -->
+            <div
+              class="dashboard-grid grid grid-cols-3 gap-6"
+              style="animation-delay: 0.2s">
+              <!-- My Offered Skills -->
+              <div class="col-span-2 card p-6">
+                <div class="flex items-center justify-between mb-6">
+                  <h3 class="text-lg font-semibold">My Offered Skills</h3>
+                  <button
+                    class="btn btn-ghost text-sm"
+                    onclick="navigateTo('offer-skill')">
+                    + Add New
+                  </button>
+                </div>
+                <div id="my-skills-list">
+                  <!-- Skills will be rendered here -->
+                </div>
+                <div id="my-skills-empty" class="empty-state hidden">
+                  <svg
+                    viewbox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    class="mx-auto">
+                    <path d="M12 2v20M2 12h20" />
+                  </svg>
+                  <p>You haven't offered any skills yet</p>
+                  <button
+                    class="btn btn-primary mt-4"
+                    onclick="navigateTo('offer-skill')">
+                    Offer Your First Skill
+                  </button>
+                </div>
+              </div>
+              <!-- Quick Stats -->
+              <div class="card p-6">
+                <h3 class="text-lg font-semibold mb-6">Quick Stats</h3>
+                <div class="space-y-4">
+                  <div class="stat-card">
+                    <div
+                      class="text-3xl font-bold text-primary-color"
+                      id="stat-offers">
+                      5
+                    </div>
+                    <div class="text-sm opacity-60">Active Offers</div>
+                  </div>
+                  <div class="stat-card">
+                    <div
+                      class="text-3xl font-bold text-cyan-400"
+                      id="stat-requests">
+                      8
+                    </div>
+                    <div class="text-sm opacity-60">Total Requests</div>
+                  </div>
+                  <div class="stat-card">
+                    <div
+                      class="text-3xl font-bold text-green-400"
+                      id="stat-completed">
+                      12
+                    </div>
+                    <div class="text-sm opacity-60">Completed Sessions</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+          <!-- Find a Skill Page -->
+          <section class="page" id="page-find-skill">
+            <div class="mb-6 animate-fade-in">
+              <h1 class="text-3xl font-bold mb-2">Find a Skill</h1>
+              <p class="opacity-60">
+                Discover skills offered by people in your community
+              </p>
+            </div>
+            <div class="flex gap-6 flex-col lg:flex-row">
+              <!-- Sidebar Filters -->
+              <div class="sidebar w-full lg:w-80 space-y-6 flex-shrink-0">
+                <div class="card p-5">
+                  <h4 class="font-semibold mb-4">Search</h4>
+                  <div class="relative">
+                    <svg
+                      class="absolute left-3 top-1/2 -translate-y-1/2 opacity-40"
+                      width="18"
+                      height="18"
+                      viewbox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2">
+                      <circle cx="11" cy="11" r="8" />
+                      <path d="m21 21-4.35-4.35" /></svg
+                    ><input
+                      type="text"
+                      id="search-input"
+                      class="input-field pl-10"
+                      placeholder="What do you want to learn?" />
+                  </div>
+                </div>
+                <div class="card p-5">
+                  <h4 class="font-semibold mb-4">Distance</h4>
+                  <div class="space-y-3">
+                    <input
+                      type="range"
+                      id="distance-slider"
+                      class="range-slider"
+                      min="1"
+                      max="50"
+                      value="10"
+                      oninput="getUserLocation()" />
+                    <div class="flex justify-between text-sm opacity-60">
+                      <span>1 km</span>
+                      <span
+                        id="distance-value"
+                        class="font-medium text-primary-color"
+                        >10 km</span
+                      >
+                      <span>50 km</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="card p-5">
+                  <h4 class="font-semibold mb-4">Category</h4>
+                  <div class="flex flex-wrap gap-2" id="category-chips">
+                    <button class="chip active" data-category="all">All</button>
+                    <button class="chip" data-category="education">
+                      Education
+                    </button>
+                    <button class="chip" data-category="technology">
+                      Technology
+                    </button>
+                    <button class="chip" data-category="arts">Arts</button>
+                    <button class="chip" data-category="wellness">
+                      Wellness
+                    </button>
+                    <button class="chip" data-category="home">Home</button>
+                  </div>
+                </div>
+                <div class="card p-5">
+                  <h4 class="font-semibold mb-4">Availability</h4>
+                  <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm">Available now</span>
+                      <div class="toggle" id="toggle-available"></div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm">Weekend only</span>
+                      <div class="toggle" id="toggle-weekend"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- Main Content -->
+              <div class="flex-1 space-y-6">
+                <!-- Map Placeholder -->
+                <!-- <div
+                  class="map-placeholder h-48 md:h-64 flex items-center justify-center relative">
+                  <div class="map-pin" style="top: 30%; left: 45%"></div>
+                  <div class="map-pin" style="top: 50%; left: 60%"></div>
+                  <div class="map-pin" style="top: 65%; left: 30%"></div>
+                  <div
+                    class="absolute inset-0 flex items-center justify-center">
+                    <div class="glass px-4 py-2 rounded-lg text-sm">
+                      <span class="opacity-60">🗺️ Map View</span>
+                      <span class="font-medium ml-2" id="skills-count"
+                        >12 skills nearby</span
+                      >
+                    </div>
+                  </div>
+                </div> -->
+                <div id="map" class="h-48 md:h-64 rounded-xl"></div>
+                <!-- Skills Grid -->
+                <div>
+                  <h3 class="font-semibold mb-4">Nearby Skills</h3>
+                  <div class="grid gap-4" id="skills-grid">
+                    <!-- Skills will be rendered here -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+          <!-- Offer a Skill Page -->
+          <section class="page" id="page-offer-skill">
+            <div class="mb-6 animate-fade-in">
+              <h1 class="text-3xl font-bold mb-2">Offer a Skill</h1>
+              <p class="opacity-60">
+                Share your expertise with people in your community
+              </p>
+            </div>
+            <div class="w-full">
+              <div class="card p-8 w-full">
+                <form id="offer-form" class="space-y-6">
+                  <div>
+                    <label
+                      for="offer-category"
+                      class="block text-sm font-medium mb-2"
+                      >Category</label
+                    >
+                    <select id="offer-category" class="input-field">
+                      <option value="">Select a category</option>
+                      <option value="education">Education</option>
+                      <option value="technology">Technology</option>
+                      <option value="arts">Arts</option>
+                      <option value="wellness">Wellness</option>
+                      <option value="home">Home</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label
+                      for="offer-title"
+                      class="block text-sm font-medium mb-2"
+                      >Skill Title</label
+                    >
+                    <input
+                      type="text"
+                      id="offer-title"
+                      class="input-field"
+                      placeholder="e.g., Guitar Lessons, Web Development" />
+                  </div>
+                  <div>
+                    <label
+                      for="offer-description"
+                      class="block text-sm font-medium mb-2"
+                      >Description</label
+                    >
+                    <textarea
+                      id="offer-description"
+                      class="input-field"
+                      rows="4"
+                      placeholder="Describe what you'll teach and your experience..."
+                      maxlength="500"></textarea>
+                    <div class="char-counter" id="description-counter">
+                      0/500
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium mb-3"
+                      >Experience Level</label
+                    >
+                    <div class="space-y-3">
+                      <input
+                        type="range"
+                        id="experience-slider"
+                        class="range-slider"
+                        min="1"
+                        max="5"
+                        value="3" />
+                      <div class="flex justify-between text-sm">
+                        <span class="opacity-60">Novice</span>
+                        <span
+                          id="experience-value"
+                          class="font-medium text-primary-color"
+                          >Intermediate</span
+                        >
+                        <span class="opacity-60">Expert</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <label
+                        for="offer-rate"
+                        class="block text-sm font-medium mb-2"
+                        >Credits/Hour</label
+                      >
 
-          </div>
-          <div><label class="block text-sm font-medium mb-2">Session Type</label>
-           <div class="flex gap-2"><button type="button" class="chip active" data-session="in-person">In-person</button> <button type="button" class="chip" data-session="online">Online</button>
-           </div>
-          </div>
-         </div>
-         <div><label class="block text-sm font-medium mb-3">Availability</label>
-          <div class="flex flex-wrap gap-2" id="availability-chips"><button type="button" class="chip" data-day="mon">Mon</button> <button type="button" class="chip" data-day="tue">Tue</button> <button type="button" class="chip" data-day="wed">Wed</button> <button type="button" class="chip" data-day="thu">Thu</button> <button type="button" class="chip" data-day="fri">Fri</button> <button type="button" class="chip" data-day="sat">Sat</button> <button type="button" class="chip" data-day="sun">Sun</button>
-          </div>
-         </div>
-         <div class="pt-4 border-t border-white/10"><button type="submit" class="btn btn-primary w-full">
-           <svg width="18" height="18" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20" />
-           </svg> Publish Skill Offer </button>
-         </div>
-        </form>
-       </div>
-      </div>
-     </section><!-- Requests Page -->
-     <section class="page" id="page-requests">
-      <div class="mb-6 animate-fade-in">
-       <h1 class="text-3xl font-bold mb-2">Requests</h1>
-       <p class="opacity-60">Manage your incoming and outgoing skill requests</p>
-      </div>
-      <div class="flex gap-2 mb-6"><button class="chip active" id="tab-incoming" data-tab="incoming">Incoming</button> <button class="chip" id="tab-outgoing" data-tab="outgoing">Outgoing</button>
-      </div>
-      <div class="space-y-4" id="requests-list"><!-- Requests will be rendered here -->
-      </div>
-      <div id="requests-empty" class="empty-state hidden">
-       <svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mx-auto"><path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-       </svg>
-       <p>No requests yet</p>
-      </div>
-     </section><!-- Messages Page -->
-     <section class="page" id="page-messages">
-      <div class="mb-6 animate-fade-in">
-       <h1 class="text-3xl font-bold mb-2">Messages</h1>
-       <p class="opacity-60">Chat with people you're exchanging skills with</p>
-      </div>
-      <div class="card overflow-hidden" style="height: calc(100% - 120px); min-height: 500px;">
-       <div class="flex h-full"><!-- Conversations List -->
-        <div class="message-list-panel w-80 border-r border-white/5 flex flex-col">
-         <div class="p-4 border-b border-white/5"><input type="text" class="input-field" placeholder="Search messages...">
-         </div>
-         <div class="flex-1 overflow-auto" id="conversations-list"><!-- Conversations will be rendered here -->
-         </div>
-        </div><!-- Chat Area -->
-        <div class="flex-1 flex flex-col">
-         <div class="p-4 border-b border-white/5 flex items-center gap-3" id="chat-header"><button class="lg:hidden p-2 rounded-lg hover:bg-white/5" id="back-to-list" aria-label="Back to list">
-           <svg width="20" height="20" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6" />
-           </svg></button>
-          <div class="avatar" id="chat-avatar">
-           A
-          </div>
-          <div>
-           <div class="font-semibold" id="chat-name">
-            Select a conversation
-           </div>
-           <div class="text-sm opacity-60" id="chat-status">
-            Start chatting
-           </div>
-          </div>
-         </div>
-         <div class="flex-1 overflow-auto p-4 space-y-4" id="chat-messages">
-          <div class="text-center opacity-40 py-8">
-           <svg width="48" height="48" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mx-auto mb-2 opacity-30"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-           </svg>
-           <p>Select a conversation to start messaging</p>
-          </div>
-         </div>
-         <div class="p-4 border-t border-white/5">
-          <div class="flex gap-3"><input type="text" id="message-input" class="input-field flex-1" placeholder="Type a message..."> <button class="btn btn-primary" id="send-message-btn">
-            <svg width="18" height="18" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13" /> <polygon points="22 2 15 22 11 13 2 9 22 2" />
-            </svg></button>
-          </div>
-         </div>
+                      <input
+                        type="number"
+                        id="offer-rate"
+                        class="input-field"
+                        value="1"
+                        disabled />
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium mb-2"
+                        >Session Type</label
+                      >
+                      <div class="flex gap-2">
+                        <button
+                          type="button"
+                          class="chip active"
+                          data-session="in-person">
+                          In-person
+                        </button>
+                        <button
+                          type="button"
+                          class="chip"
+                          data-session="online">
+                          Online
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium mb-3"
+                      >Availability</label
+                    >
+                    <div class="flex flex-wrap gap-2" id="availability-chips">
+                      <button type="button" class="chip" data-day="mon">
+                        Mon
+                      </button>
+                      <button type="button" class="chip" data-day="tue">
+                        Tue
+                      </button>
+                      <button type="button" class="chip" data-day="wed">
+                        Wed
+                      </button>
+                      <button type="button" class="chip" data-day="thu">
+                        Thu
+                      </button>
+                      <button type="button" class="chip" data-day="fri">
+                        Fri
+                      </button>
+                      <button type="button" class="chip" data-day="sat">
+                        Sat
+                      </button>
+                      <button type="button" class="chip" data-day="sun">
+                        Sun
+                      </button>
+                    </div>
+                  </div>
+                  <div class="pt-4 border-t border-white/10">
+                    <button type="submit" class="btn btn-primary w-full">
+                      <svg
+                        width="18"
+                        height="18"
+                        viewbox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2">
+                        <path d="M12 2v20M2 12h20" />
+                      </svg>
+                      Publish Skill Offer
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </section>
+          <!-- Requests Page -->
+          <section class="page" id="page-requests">
+            <div class="mb-6 animate-fade-in">
+              <h1 class="text-3xl font-bold mb-2">Requests</h1>
+              <p class="opacity-60">
+                Manage your incoming and outgoing skill requests
+              </p>
+            </div>
+            <div class="flex gap-2 mb-6">
+              <button class="chip active" id="tab-incoming" data-tab="incoming">
+                Incoming
+              </button>
+              <button class="chip" id="tab-outgoing" data-tab="outgoing">
+                Outgoing
+              </button>
+            </div>
+            <div class="space-y-4" id="requests-list">
+              <!-- Requests will be rendered here -->
+            </div>
+            <div id="requests-empty" class="empty-state hidden">
+              <svg
+                viewbox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                class="mx-auto">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+              </svg>
+              <p>No requests yet</p>
+            </div>
+          </section>
+          <!-- Messages Page -->
+          <section class="page" id="page-messages">
+            <div class="mb-6 animate-fade-in">
+              <h1 class="text-3xl font-bold mb-2">Messages</h1>
+              <p class="opacity-60">
+                Chat with people you're exchanging skills with
+              </p>
+            </div>
+            <div
+              class="card overflow-hidden"
+              style="height: calc(100% - 120px); min-height: 500px">
+              <div class="flex h-full">
+                <!-- Conversations List -->
+                <div
+                  class="message-list-panel w-80 border-r border-white/5 flex flex-col">
+                  <div class="p-4 border-b border-white/5">
+                    <input
+                      type="text"
+                      class="input-field"
+                      placeholder="Search messages..." />
+                  </div>
+                  <div class="flex-1 overflow-auto" id="conversations-list">
+                    <!-- Conversations will be rendered here -->
+                  </div>
+                </div>
+                <!-- Chat Area -->
+                <div class="flex-1 flex flex-col">
+                  <div
+                    class="p-4 border-b border-white/5 flex items-center gap-3"
+                    id="chat-header">
+                    <button
+                      class="lg:hidden p-2 rounded-lg hover:bg-white/5"
+                      id="back-to-list"
+                      aria-label="Back to list">
+                      <svg
+                        width="20"
+                        height="20"
+                        viewbox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2">
+                        <path d="m15 18-6-6 6-6" />
+                      </svg>
+                    </button>
+                    <div class="avatar" id="chat-avatar">A</div>
+                    <div>
+                      <div class="font-semibold" id="chat-name">
+                        Select a conversation
+                      </div>
+                      <div class="text-sm opacity-60" id="chat-status">
+                        Start chatting
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    class="flex-1 overflow-auto p-4 space-y-4"
+                    id="chat-messages">
+                    <div class="text-center opacity-40 py-8">
+                      <svg
+                        width="48"
+                        height="48"
+                        viewbox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        class="mx-auto mb-2 opacity-30">
+                        <path
+                          d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                      </svg>
+                      <p>Select a conversation to start messaging</p>
+                    </div>
+                  </div>
+                  <div class="p-4 border-t border-white/5">
+                    <div class="flex gap-3">
+                      <input
+                        type="text"
+                        id="message-input"
+                        class="input-field flex-1"
+                        placeholder="Type a message..." />
+                      <button class="btn btn-primary" id="send-message-btn">
+                        <svg
+                          width="18"
+                          height="18"
+                          viewbox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2">
+                          <line x1="22" y1="2" x2="11" y2="13" />
+                          <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
-       </div>
-      </div>
-     </section>
+      </main>
+      <!-- Toast Container -->
+      <div class="toast-container" id="toast-container"></div>
     </div>
-   </main><!-- Toast Container -->
-   <div class="toast-container" id="toast-container"></div>
-  </div>
-  <script src="script.js"></script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c69fe8927798513',t:'MTc2OTg3MDc0Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c69fe8927798513',t:'MTc2OTg3MDc0Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script src="{% static 'js/script.js' %}"></script>
+    <!-- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c69fe8927798513',t:'MTc2OTg3MDc0Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c69fe8927798513',t:'MTc2OTg3MDc0Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script> -->
+  </body>
 </html>
