@@ -2,7 +2,31 @@
 // ============================================
 // APP STATE & DATA
 // ============================================
+document.addEventListener("DOMContentLoaded", () => {
+  const isLoggedIn = document.body.dataset.auth === "true";
 
+  if (!isLoggedIn) {
+    document.getElementById("auth-modal").classList.add("active");
+  }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const experienceSlider = document.getElementById("experience-slider");
+  const experienceValue = document.getElementById("experience-value");
+
+  if (experienceSlider && experienceValue) {
+    experienceSlider.addEventListener("input", () => {
+      const levels = [
+        "Novice",
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Expert",
+      ];
+      experienceValue.textContent = levels[experienceSlider.value - 1];
+    });
+  }
+});
 const defaultConfiguration = {
   app_title: "SkillSwap Local",
   welcome_text: "Welcome back",
@@ -348,7 +372,7 @@ const sampleMessages = {
   ],
 };
 
-let mySkills = [];
+// let mySkills = [];
 
 // Experience level mapping
 const EXPERIENCE_MAP = [
@@ -422,53 +446,29 @@ function getCategoryColor(category) {
 function navigateTo(page) {
   currentPage = page;
 
-  // Update nav items
-  document.querySelectorAll(".nav-item").forEach((item) => {
-    item.classList.remove("active");
-    if (item.dataset.page === page) item.classList.add("active");
+  // hide all pages
+  document.querySelectorAll(".page").forEach((p) => {
+    p.classList.remove("active");
   });
 
-  // Update pages
-  document
-    .querySelectorAll(".page")
-    .forEach((p) => p.classList.remove("active"));
-
-  if (currentPage === "find-skill" && page !== "find-skill" && map) {
-    map.remove();
-    map = null;
-    mapInitialized = false;
+  // show selected page
+  const target = document.getElementById(`page-${page}`);
+  if (target) {
+    target.classList.add("active");
   }
 
-  const pageEl = document.getElementById(`page-${page}`);
-  if (pageEl) pageEl.classList.add("active");
+  // update nav highlight
+  document.querySelectorAll(".nav-item").forEach((item) => {
+    item.classList.toggle("active", item.dataset.page === page);
+  });
 
-  // Close mobile menu
-  document.getElementById("mobile-menu").classList.remove("active");
+  // close mobile menu
+  const mobileMenu = document.getElementById("mobile-menu");
+  if (mobileMenu) mobileMenu.classList.remove("active");
 
-  // Render page-specific content
-  if (page === "dashboard") renderDashboard();
-  if (page === "find-skill") {
-    loadMapIfNeeded();
-
-    const slider = document.getElementById("distance-slider");
-    if (slider && !slider.dataset.listenerAttached) {
-      slider.addEventListener("input", (e) => {
-        const newRadius = Number(e.target.value);
-        document.getElementById(
-          "distance-value"
-        ).textContent = `${newRadius} km`;
-
-        if (map && userMarker) {
-          const userLatLng = userMarker.getLatLng();
-          const newZoom = getZoomLevel(newRadius);
-          map.setView(userLatLng, newZoom);
-          drawRadius(userLatLng.lat, userLatLng.lng);
-        }
-        renderSkillsGrid();
-      });
-      slider.dataset.listenerAttached = "true";
-    }
-  }
+  // page-specific logic
+  // if (page === "dashboard") renderDashboard();
+  if (page === "find-skill") loadMapIfNeeded();
   if (page === "requests") renderRequests();
   if (page === "messages") renderConversations();
 }
@@ -478,7 +478,7 @@ function navigateTo(page) {
 // ============================================
 
 function checkAuth() {
-  const saved = localStorage.getItem("skillswap_user");
+  // const saved = localStorage.getItem("skillswap_user");
   if (saved) {
     currentUser = JSON.parse(saved);
     hideAuthModal();
@@ -497,37 +497,6 @@ function hideAuthModal() {
   document.getElementById("auth-modal").classList.remove("active");
 }
 
-function login(email, password) {
-  // Demo validation
-  if (email === "demo@skillswap.com" && password === "demo123") {
-    currentUser = { name: "Demo User", email, credits: 25, pendingCredits: 3 };
-    localStorage.setItem("skillswap_user", JSON.stringify(currentUser));
-    hideAuthModal();
-    updateUserUI();
-    loadUserData();
-    showToast("Welcome back!");
-    return true;
-  }
-  return false;
-}
-
-function signup(name, email, password) {
-  currentUser = { name, email, credits: 10, pendingCredits: 0 };
-  localStorage.setItem("skillswap_user", JSON.stringify(currentUser));
-  hideAuthModal();
-  updateUserUI();
-  loadUserData();
-  showToast("Account created! Welcome to SkillSwap!");
-  return true;
-}
-
-function logout() {
-  currentUser = null;
-  localStorage.removeItem("skillswap_user");
-  localStorage.removeItem("skillswap_myskills");
-  mySkills = [];
-  showAuthModal();
-}
 
 function updateUserUI() {
   if (!currentUser) return;
@@ -537,9 +506,8 @@ function updateUserUI() {
     .toUpperCase();
   document.getElementById("user-name-display").textContent = currentUser.name;
   document.getElementById("total-credits").textContent = currentUser.credits;
-  document.getElementById(
-    "pending-credits"
-  ).textContent = `+${currentUser.pendingCredits}`;
+  document.getElementById("pending-credits").textContent =
+    `+${currentUser.pendingCredits}`;
 
   const dashboardName = document.getElementById("dashboard-user-name");
   if (dashboardName) dashboardName.textContent = currentUser.name;
@@ -548,77 +516,10 @@ function updateUserUI() {
 function loadUserData() {
   const savedSkills = localStorage.getItem("skillswap_myskills");
   if (savedSkills) {
-    mySkills = JSON.parse(savedSkills);
+    // mySkills = JSON.parse(savedSkills);
   }
-  renderDashboard();
+  // renderDashboard();
 }
-
-// ============================================
-// DASHBOARD
-// ============================================
-
-function renderDashboard() {
-  const listEl = document.getElementById("my-skills-list");
-  const emptyEl = document.getElementById("my-skills-empty");
-
-  // Update pending requests count
-  const pendingCount = sampleRequests.filter(
-    (r) => r.type === "incoming" && r.status === "pending"
-  ).length;
-  document.getElementById("pending-requests-count").textContent = pendingCount;
-
-  // Update stats
-  document.getElementById("stat-offers").textContent = mySkills.length;
-  document.getElementById("stat-requests").textContent = sampleRequests.length;
-  document.getElementById("stat-completed").textContent = 12;
-
-  if (mySkills.length === 0) {
-    listEl.innerHTML = "";
-    emptyEl.classList.remove("hidden");
-  } else {
-    emptyEl.classList.add("hidden");
-    listEl.innerHTML = mySkills
-      .map(
-        (skill) => `
-      <div class="skill-card mb-3 flex items-start gap-4">
-        <div class="w-12 h-12 rounded-lg flex items-center justify-center text-lg" style="background: ${getCategoryColor(
-          skill.category
-        )}20; color: ${getCategoryColor(skill.category)}">
-          ${
-            skill.category === "education"
-              ? "📚"
-              : skill.category === "technology"
-              ? "💻"
-              : skill.category === "arts"
-              ? "🎨"
-              : skill.category === "wellness"
-              ? "🧘"
-              : "🏠"
-          }
-        </div>
-        <div class="flex-1">
-          <div class="flex items-start justify-between">
-            <div>
-              <h4 class="font-semibold">${skill.title}</h4>
-              <p class="text-sm opacity-60 capitalize">${skill.category}</p>
-            </div>
-            <span class="pill" style="background: ${getCategoryColor(
-              skill.category
-            )}20; color: ${getCategoryColor(skill.category)}">${
-          skill.rate
-        } credit/hr</span>
-          </div>
-          <p class="text-sm opacity-70 mt-2 line-clamp-2">${
-            skill.description
-          }</p>
-        </div>
-      </div>
-    `
-      )
-      .join("");
-  }
-}
-
 // ============================================
 // FIND SKILL
 // ============================================
@@ -650,13 +551,12 @@ function renderSkillsGrid() {
     filtered = filtered.filter(
       (s) =>
         s.title.toLowerCase().includes(searchTerm) ||
-        s.description.toLowerCase().includes(searchTerm)
+        s.description.toLowerCase().includes(searchTerm),
     );
   }
 
-  document.getElementById(
-    "skills-count"
-  ).textContent = `${filtered.length} skills nearby`;
+  document.getElementById("skills-count").textContent =
+    `${filtered.length} skills nearby`;
 
   renderSkillMarkers(filtered);
 
@@ -665,7 +565,7 @@ function renderSkillsGrid() {
       (skill) => `
     <div class="skill-card flex gap-4">
       <div class="avatar-lg flex-shrink-0" style="background: linear-gradient(135deg, ${getCategoryColor(
-        skill.category
+        skill.category,
       )}, ${getCategoryColor(skill.category)}aa)">
         ${skill.avatar}
       </div>
@@ -676,10 +576,10 @@ function renderSkillsGrid() {
             <p class="text-sm opacity-60">${skill.user} · ${skill.distance}</p>
           </div>
           <span class="pill" style="background: ${getCategoryColor(
-            skill.category
+            skill.category,
           )}20; color: ${getCategoryColor(skill.category)}">${
-        skill.rate
-      } credit/hr</span>
+            skill.rate
+          } credit/hr</span>
         </div>
         <p class="text-sm opacity-70 mt-2 mb-3">${skill.description}</p>
         <div class="flex items-center justify-between">
@@ -695,7 +595,7 @@ function renderSkillsGrid() {
         </div>
       </div>
     </div>
-  `
+  `,
     )
     .join("");
 }
@@ -712,8 +612,9 @@ function requestSkill(skillId) {
 // ============================================
 
 function handleOfferSubmit(e) {
-  e.preventDefault();
+  // e.preventDefault();
 
+  const experienceSlider = document.getElementById("experience-slider");
   const category = document.getElementById("offer-category").value;
   const title = document.getElementById("offer-title").value;
   const description = document.getElementById("offer-description").value;
@@ -737,8 +638,8 @@ function handleOfferSubmit(e) {
     createdAt: new Date().toISOString(),
   };
 
-  mySkills.push(newSkill);
-  localStorage.setItem("skillswap_myskills", JSON.stringify(mySkills));
+  // mySkills.push(newSkill);
+  // localStorage.setItem("skillswap_myskills", JSON.stringify(mySkills));
 
   // Reset form
   e.target.reset();
@@ -786,8 +687,8 @@ function renderRequests() {
                 <p class="text-sm opacity-60">${req.skill} · ${req.date}</p>
               </div>
               <span class="status-badge status-${req.status}">${
-          req.status
-        }</span>
+                req.status
+              }</span>
             </div>
             <p class="text-sm opacity-70 mb-4">${req.message}</p>
             ${
@@ -803,7 +704,7 @@ function renderRequests() {
           </div>
         </div>
       </div>
-    `
+    `,
       )
       .join("");
   }
@@ -855,7 +756,7 @@ function renderConversations() {
         </div>
       </div>
     </div>
-  `
+  `,
     )
     .join("");
 }
@@ -900,7 +801,7 @@ function renderMessages() {
       <p>${msg.text}</p>
       <span class="text-xs opacity-50 mt-1 block">${msg.time}</span>
     </div>
-  `
+  `,
     )
     .join("");
 
@@ -945,7 +846,7 @@ function sendMessage() {
 
 document.addEventListener("DOMContentLoaded", () => {
   // Auth check
-  checkAuth();
+  // checkAuth();
 
   // Navigation
   document.querySelectorAll(".nav-item, .mobile-nav-item").forEach((item) => {
@@ -960,52 +861,10 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("mobile-menu").classList.toggle("active");
   });
 
-  // Login form
-  document.getElementById("login-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const email = document.getElementById("login-email").value;
-    const password = document.getElementById("login-password").value;
-
-    if (!login(email, password)) {
-      document.getElementById("login-error").textContent =
-        "Invalid credentials. Try demo@skillswap.com / demo123";
-      document.getElementById("login-error").classList.remove("hidden");
-    }
-  });
-
-  // Signup form
-  document.getElementById("signup-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const name = document.getElementById("signup-name").value;
-    const email = document.getElementById("signup-email").value;
-    const password = document.getElementById("signup-password").value;
-    const terms = document.getElementById("signup-terms").checked;
-
-    if (!name || !email || !password) {
-      document.getElementById("signup-error").textContent =
-        "Please fill in all fields";
-      document.getElementById("signup-error").classList.remove("hidden");
-      return;
-    }
-
-    if (!terms) {
-      document.getElementById("signup-error").textContent =
-        "Please accept the terms";
-      document.getElementById("signup-error").classList.remove("hidden");
-      return;
-    }
-
-    signup(name, email, password);
-  });
-
-  // Logout
-  document.getElementById("logout-btn").addEventListener("click", logout);
-
   // Distance slider
   document.getElementById("distance-slider").addEventListener("input", (e) => {
-    document.getElementById(
-      "distance-value"
-    ).textContent = `${e.target.value} km`;
+    document.getElementById("distance-value").textContent =
+      `${e.target.value} km`;
   });
 
   // Category chips
@@ -1026,16 +885,22 @@ document.addEventListener("DOMContentLoaded", () => {
       toggle.classList.toggle("active");
     });
   });
+  document.addEventListener("DOMContentLoaded", () => {
+    const availableToggle = document.getElementById("toggle-available");
+    const weekendToggle = document.getElementById("toggle-weekend");
 
-  // Search input
-  document.getElementById("search-input").addEventListener("input", () => {
-    renderSkillsGrid();
+    if (availableToggle) {
+      availableToggle.addEventListener("click", () => {
+        availableToggle.classList.toggle("active");
+      });
+    }
+
+    if (weekendToggle) {
+      weekendToggle.addEventListener("click", () => {
+        weekendToggle.classList.toggle("active");
+      });
+    }
   });
-
-  // Offer form
-  document
-    .getElementById("offer-form")
-    .addEventListener("submit", handleOfferSubmit);
 
   // Description counter
   document
@@ -1110,28 +975,6 @@ document.addEventListener("DOMContentLoaded", () => {
     currentChatId = null;
   });
 
-  // Distance slider
-  // const slider = document.getElementById("distance-slider");
-  // if (slider) {
-  //   slider.addEventListener("input", (e) => {
-  //     const newRadius = Number(e.target.value);
-  //     document.getElementById("distance-value").textContent = `${newRadius} km`;
-
-  //     if (map && userMarker) {
-  //       const userLatLng = userMarker.getLatLng();
-  //       const newZoom = getZoomLevel(newRadius);
-  //       map.setView(userLatLng, newZoom);
-  //       drawRadius(userLatLng.lat, userLatLng.lng);
-  //     }
-  //     // Re-filter skills based on new radius if needed
-  //     renderSkillsGrid();
-  //   });
-  // }
-
-  // Initial render
-  // renderSkillsGrid();
-
-  // Apply initial config
   updateUIFromConfig();
 });
 
@@ -1160,7 +1003,7 @@ function renderSkillMarkers(skills) {
       icon: L.divIcon({
         className: "custom-div-icon",
         html: `<div style='background-color:${getCategoryColor(
-          skill.category
+          skill.category,
         )};' class='marker-pin'></div><i class='material-icons'>${
           skill.avatar
         }</i>`,
@@ -1244,7 +1087,7 @@ function getUserLocation() {
     () => {
       alert("Unable to retrieve your location");
       renderSkillsGrid();
-    }
+    },
   );
 }
 
@@ -1293,7 +1136,12 @@ function renderSkills(skills) {
     skillMarkers.push(marker);
   });
 
-  document.getElementById(
-    "skills-count"
-  ).innerText = `${skills.length} skills nearby`;
+  document.getElementById("skills-count").innerText =
+    `${skills.length} skills nearby`;
+}
+
+function stayOnFindSkill() {
+  setTimeout(() => {
+    navigateTo("find-skill");
+  }, 50);
 }
