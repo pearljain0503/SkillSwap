@@ -1,32 +1,8 @@
 "use strict";
+
 // ============================================
-// APP STATE & DATA
+// CONFIGURATION
 // ============================================
-document.addEventListener("DOMContentLoaded", () => {
-  const isLoggedIn = document.body.dataset.auth === "true";
-
-  if (!isLoggedIn) {
-    document.getElementById("auth-modal").classList.add("active");
-  }
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-  const experienceSlider = document.getElementById("experience-slider");
-  const experienceValue = document.getElementById("experience-value");
-
-  if (experienceSlider && experienceValue) {
-    experienceSlider.addEventListener("input", () => {
-      const levels = [
-        "Novice",
-        "Beginner",
-        "Intermediate",
-        "Advanced",
-        "Expert",
-      ];
-      experienceValue.textContent = levels[experienceSlider.value - 1];
-    });
-  }
-});
 const defaultConfiguration = {
   app_title: "SkillSwap Local",
   welcome_text: "Welcome back",
@@ -35,76 +11,12 @@ const defaultConfiguration = {
 
 let config = { ...defaultConfiguration };
 
-// Initialize Element SDK
-if (window.elementSdk) {
-  window.elementSdk.init({
-    defaultConfiguration,
-    onConfigChange: async (newConfig) => {
-      config = { ...defaultConfiguration, ...newConfig };
-      updateUIFromConfig();
-    },
-    mapToCapabilities: (cfg) => ({
-      recolorables: [
-        {
-          get: () => cfg.bg_color || "#0f0f23",
-          set: (v) => {
-            cfg.bg_color = v;
-            window.elementSdk.setConfig({ bg_color: v });
-          },
-        },
-        {
-          get: () => cfg.surface_color || "#1a1a2e",
-          set: (v) => {
-            cfg.surface_color = v;
-            window.elementSdk.setConfig({ surface_color: v });
-          },
-        },
-        {
-          get: () => cfg.text_color || "#e8e8f0",
-          set: (v) => {
-            cfg.text_color = v;
-            window.elementSdk.setConfig({ text_color: v });
-          },
-        },
-        {
-          get: () => cfg.primary_color || "#7c3aed",
-          set: (v) => {
-            cfg.primary_color = v;
-            window.elementSdk.setConfig({ primary_color: v });
-          },
-        },
-        {
-          get: () => cfg.secondary_color || "#06b6d4",
-          set: (v) => {
-            cfg.secondary_color = v;
-            window.elementSdk.setConfig({ secondary_color: v });
-          },
-        },
-      ],
-      borderables: [],
-      fontEditable: {
-        get: () => cfg.font_family || "Inter",
-        set: (v) => {
-          cfg.font_family = v;
-          window.elementSdk.setConfig({ font_family: v });
-        },
-      },
-      fontSizeable: {
-        get: () => cfg.font_size || 16,
-        set: (v) => {
-          cfg.font_size = v;
-          window.elementSdk.setConfig({ font_size: v });
-        },
-      },
-    }),
-    mapToEditPanelValues: (cfg) =>
-      new Map([
-        ["app_title", cfg.app_title || defaultConfiguration.app_title],
-        ["welcome_text", cfg.welcome_text || defaultConfiguration.welcome_text],
-        ["tagline", cfg.tagline || defaultConfiguration.tagline],
-      ]),
-  });
-}
+// App state
+let currentUser = null;
+let currentPage = "dashboard";
+let selectedCategory = "all";
+let currentChatId = null;
+let requestsTab = "incoming";
 
 function updateUIFromConfig() {
   const appTitle = document.getElementById("app-title-text");
@@ -142,12 +54,9 @@ function updateUIFromConfig() {
   }
 }
 
-// App state
-let currentUser = null;
-let currentPage = "dashboard";
-let selectedCategory = "all";
-let currentChatId = null;
-let requestsTab = "incoming";
+// ============================================
+// SAMPLE DATA
+// ============================================
 
 // Sample data
 const sampleSkills = [
@@ -163,8 +72,8 @@ const sampleSkills = [
     user: "Sarah M.",
     avatar: "S",
     available: true,
-    lat: 28.6139,
-    lng: 77.206,
+    lat: 19.076, // Dadar
+    lng: 72.8777,
   },
   {
     id: 2,
@@ -177,8 +86,8 @@ const sampleSkills = [
     user: "Mike T.",
     avatar: "M",
     available: true,
-    lat: 28.63,
-    lng: 77.22,
+    lat: 19.1136, // Andheri
+    lng: 72.8697,
   },
   {
     id: 3,
@@ -191,8 +100,8 @@ const sampleSkills = [
     user: "Emma L.",
     avatar: "E",
     available: false,
-    lat: 28.61,
-    lng: 77.21,
+    lat: 19.0176, // Colaba
+    lng: 72.8562,
   },
   {
     id: 4,
@@ -205,8 +114,8 @@ const sampleSkills = [
     user: "Pierre D.",
     avatar: "P",
     available: true,
-    lat: 28.58,
-    lng: 77.25,
+    lat: 19.0896, // Bandra
+    lng: 72.8347,
   },
   {
     id: 5,
@@ -219,8 +128,8 @@ const sampleSkills = [
     user: "Bob K.",
     avatar: "B",
     available: true,
-    lat: 28.66,
-    lng: 77.18,
+    lat: 19.2183, // Borivali
+    lng: 72.9781,
   },
   {
     id: 6,
@@ -233,8 +142,8 @@ const sampleSkills = [
     user: "Lisa R.",
     avatar: "L",
     available: true,
-    lat: 28.55,
-    lng: 77.15,
+    lat: 19.033, // Worli
+    lng: 72.8162,
   },
 ];
 
@@ -372,9 +281,7 @@ const sampleMessages = {
   ],
 };
 
-// let mySkills = [];
-
-// Experience level mapping
+// Experience level mapping (slider values are 1-5)
 const EXPERIENCE_MAP = [
   { label: "Novice", credits: 1 },
   { label: "Beginner", credits: 1 },
@@ -383,12 +290,20 @@ const EXPERIENCE_MAP = [
   { label: "Expert", credits: 4 },
 ];
 
+function getExperienceData(value) {
+  const numericValue = Number(value);
+  const baseIndex = Number.isFinite(numericValue) ? numericValue - 1 : 0;
+  const index = Math.min(Math.max(baseIndex, 0), EXPERIENCE_MAP.length - 1);
+  return EXPERIENCE_MAP[index];
+}
+
 // ============================================
 // UTILITY FUNCTIONS
 // ============================================
 
 function showToast(message, type = "success") {
   const container = document.getElementById("toast-container");
+  if (!container) return;
   const toast = document.createElement("div");
   toast.className = `toast ${type}`;
   toast.innerHTML = `
@@ -473,12 +388,15 @@ function navigateTo(page) {
   if (page === "messages") renderConversations();
 }
 
+// Expose for inline handlers (if any) and easy debugging.
+window.navigateTo = navigateTo;
+
 // ============================================
 // AUTH
 // ============================================
 
 function checkAuth() {
-  // const saved = localStorage.getItem("skillswap_user");
+  const saved = localStorage.getItem("skillswap_user");
   if (saved) {
     currentUser = JSON.parse(saved);
     hideAuthModal();
@@ -497,7 +415,6 @@ function hideAuthModal() {
   document.getElementById("auth-modal").classList.remove("active");
 }
 
-
 function updateUserUI() {
   if (!currentUser) return;
 
@@ -506,8 +423,9 @@ function updateUserUI() {
     .toUpperCase();
   document.getElementById("user-name-display").textContent = currentUser.name;
   document.getElementById("total-credits").textContent = currentUser.credits;
-  document.getElementById("pending-credits").textContent =
-    `+${currentUser.pendingCredits}`;
+  document.getElementById(
+    "pending-credits"
+  ).textContent = `+${currentUser.pendingCredits}`;
 
   const dashboardName = document.getElementById("dashboard-user-name");
   if (dashboardName) dashboardName.textContent = currentUser.name;
@@ -551,12 +469,14 @@ function renderSkillsGrid() {
     filtered = filtered.filter(
       (s) =>
         s.title.toLowerCase().includes(searchTerm) ||
-        s.description.toLowerCase().includes(searchTerm),
+        s.description.toLowerCase().includes(searchTerm)
     );
   }
 
-  document.getElementById("skills-count").textContent =
-    `${filtered.length} skills nearby`;
+  const skillsCount = document.getElementById("skills-count");
+  if (skillsCount) {
+    skillsCount.textContent = `${filtered.length} skills nearby`;
+  }
 
   renderSkillMarkers(filtered);
 
@@ -565,7 +485,7 @@ function renderSkillsGrid() {
       (skill) => `
     <div class="skill-card flex gap-4">
       <div class="avatar-lg flex-shrink-0" style="background: linear-gradient(135deg, ${getCategoryColor(
-        skill.category,
+        skill.category
       )}, ${getCategoryColor(skill.category)}aa)">
         ${skill.avatar}
       </div>
@@ -576,10 +496,10 @@ function renderSkillsGrid() {
             <p class="text-sm opacity-60">${skill.user} · ${skill.distance}</p>
           </div>
           <span class="pill" style="background: ${getCategoryColor(
-            skill.category,
+            skill.category
           )}20; color: ${getCategoryColor(skill.category)}">${
-            skill.rate
-          } credit/hr</span>
+        skill.rate
+      } credit/hr</span>
         </div>
         <p class="text-sm opacity-70 mt-2 mb-3">${skill.description}</p>
         <div class="flex items-center justify-between">
@@ -595,7 +515,7 @@ function renderSkillsGrid() {
         </div>
       </div>
     </div>
-  `,
+  `
     )
     .join("");
 }
@@ -618,10 +538,8 @@ function handleOfferSubmit(e) {
   const category = document.getElementById("offer-category").value;
   const title = document.getElementById("offer-title").value;
   const description = document.getElementById("offer-description").value;
-  /*const rate = document.getElementById('offer-rate').value;*/
   const rate = document.getElementById("offer-rate").value;
-  const experienceLevel =
-    EXPERIENCE_MAP[document.getElementById("experience-slider").value];
+  const experienceLevel = getExperienceData(experienceSlider.value);
 
   if (!category || !title || !description) {
     showToast("Please fill in all required fields", "error");
@@ -632,9 +550,9 @@ function handleOfferSubmit(e) {
     category,
     title,
     description,
-    rate: parseInt(rate),
+    rate: parseInt(rate, 10),
     experience: experienceLevel.label,
-    experienceValue: parseInt(experienceSlider.value),
+    experienceValue: parseInt(experienceSlider.value, 10),
     createdAt: new Date().toISOString(),
   };
 
@@ -687,8 +605,8 @@ function renderRequests() {
                 <p class="text-sm opacity-60">${req.skill} · ${req.date}</p>
               </div>
               <span class="status-badge status-${req.status}">${
-                req.status
-              }</span>
+          req.status
+        }</span>
             </div>
             <p class="text-sm opacity-70 mb-4">${req.message}</p>
             ${
@@ -704,7 +622,7 @@ function renderRequests() {
           </div>
         </div>
       </div>
-    `,
+    `
       )
       .join("");
   }
@@ -756,7 +674,7 @@ function renderConversations() {
         </div>
       </div>
     </div>
-  `,
+  `
     )
     .join("");
 }
@@ -801,7 +719,7 @@ function renderMessages() {
       <p>${msg.text}</p>
       <span class="text-xs opacity-50 mt-1 block">${msg.time}</span>
     </div>
-  `,
+  `
     )
     .join("");
 
@@ -845,27 +763,41 @@ function sendMessage() {
 // ============================================
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Auth check
-  // checkAuth();
+  // Auth check (based on server-rendered data attribute)
+  const isLoggedIn = document.body.dataset.auth === "true";
+  if (!isLoggedIn) {
+    const authModal = document.getElementById("auth-modal");
+    if (authModal) authModal.classList.add("active");
+  }
 
-  // Navigation
-  document.querySelectorAll(".nav-item, .mobile-nav-item").forEach((item) => {
-    item.addEventListener("click", () => {
-      const page = item.dataset.page;
-      if (page) navigateTo(page);
-    });
+  // Navigation (delegate so SVG/span clicks still work)
+  document.addEventListener("click", (e) => {
+    const target = e.target.closest("[data-page]");
+    if (!target) return;
+    const page = target.dataset.page;
+    if (!page) return;
+    e.preventDefault();
+    navigateTo(page);
   });
 
   // Mobile menu
-  document.getElementById("mobile-menu-btn").addEventListener("click", () => {
-    document.getElementById("mobile-menu").classList.toggle("active");
-  });
+  const mobileMenuBtn = document.getElementById("mobile-menu-btn");
+  if (mobileMenuBtn) {
+    mobileMenuBtn.addEventListener("click", () => {
+      const mobileMenu = document.getElementById("mobile-menu");
+      if (mobileMenu) mobileMenu.classList.toggle("active");
+    });
+  }
 
   // Distance slider
-  document.getElementById("distance-slider").addEventListener("input", (e) => {
-    document.getElementById("distance-value").textContent =
-      `${e.target.value} km`;
-  });
+  const distanceSlider = document.getElementById("distance-slider");
+  const distanceValue = document.getElementById("distance-value");
+  if (distanceSlider && distanceValue) {
+    distanceSlider.addEventListener("input", (e) => {
+      distanceValue.textContent = `${e.target.value} km`;
+      updateRadiusAndSkills();
+    });
+  }
 
   // Category chips
   document.querySelectorAll("#category-chips .chip").forEach((chip) => {
@@ -879,40 +811,41 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // Search (prevent page refresh and filter locally)
+  const searchForm = document.querySelector("#page-find-skill form");
+  const searchInput = document.getElementById("search-input");
+  if (searchForm) {
+    searchForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      renderSkillsGrid();
+    });
+  }
+  if (searchInput) {
+    searchInput.addEventListener("input", () => {
+      renderSkillsGrid();
+    });
+  }
+
   // Toggle switches
   document.querySelectorAll(".toggle").forEach((toggle) => {
     toggle.addEventListener("click", () => {
       toggle.classList.toggle("active");
     });
   });
-  document.addEventListener("DOMContentLoaded", () => {
-    const availableToggle = document.getElementById("toggle-available");
-    const weekendToggle = document.getElementById("toggle-weekend");
-
-    if (availableToggle) {
-      availableToggle.addEventListener("click", () => {
-        availableToggle.classList.toggle("active");
-      });
-    }
-
-    if (weekendToggle) {
-      weekendToggle.addEventListener("click", () => {
-        weekendToggle.classList.toggle("active");
-      });
-    }
-  });
 
   // Description counter
-  document
-    .getElementById("offer-description")
-    .addEventListener("input", (e) => {
+  const offerDescription = document.getElementById("offer-description");
+  if (offerDescription) {
+    offerDescription.addEventListener("input", (e) => {
       const counter = document.getElementById("description-counter");
+      if (!counter) return;
       const length = e.target.value.length;
       counter.textContent = `${length}/500`;
       counter.classList.remove("warning", "error");
       if (length > 400) counter.classList.add("warning");
       if (length >= 500) counter.classList.add("error");
     });
+  }
 
   // Experience slider
   const experienceSlider = document.getElementById("experience-slider");
@@ -920,17 +853,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const creditsInput = document.getElementById("offer-rate");
 
   function updateExperienceAndCredits() {
-    const level = experienceSlider.value;
-    const data = EXPERIENCE_MAP[level];
-
-    experienceValue.textContent = data.label;
-    creditsInput.value = data.credits;
+    if (!experienceSlider) return;
+    const data = getExperienceData(experienceSlider.value);
+    if (experienceValue) experienceValue.textContent = data.label;
+    if (creditsInput) creditsInput.value = data.credits;
   }
 
-  experienceSlider.addEventListener("input", updateExperienceAndCredits);
-
-  // initialize on load
-  updateExperienceAndCredits();
+  if (experienceSlider) {
+    experienceSlider.addEventListener("input", updateExperienceAndCredits);
+    // Initialize on load
+    updateExperienceAndCredits();
+  }
 
   // Session type chips
   document.querySelectorAll("[data-session]").forEach((chip) => {
@@ -951,31 +884,43 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Request tabs
-  document.getElementById("tab-incoming").addEventListener("click", () => {
-    requestsTab = "incoming";
-    renderRequests();
-  });
-
-  document.getElementById("tab-outgoing").addEventListener("click", () => {
-    requestsTab = "outgoing";
-    renderRequests();
-  });
+  const incomingTab = document.getElementById("tab-incoming");
+  const outgoingTab = document.getElementById("tab-outgoing");
+  if (incomingTab) {
+    incomingTab.addEventListener("click", () => {
+      requestsTab = "incoming";
+      renderRequests();
+    });
+  }
+  if (outgoingTab) {
+    outgoingTab.addEventListener("click", () => {
+      requestsTab = "outgoing";
+      renderRequests();
+    });
+  }
 
   // Send message
-  document
-    .getElementById("send-message-btn")
-    .addEventListener("click", sendMessage);
-  document.getElementById("message-input").addEventListener("keypress", (e) => {
-    if (e.key === "Enter") sendMessage();
-  });
+  const sendMessageBtn = document.getElementById("send-message-btn");
+  if (sendMessageBtn) sendMessageBtn.addEventListener("click", sendMessage);
+  const messageInput = document.getElementById("message-input");
+  if (messageInput) {
+    messageInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
+  }
 
   // Back to conversations list (mobile)
-  document.getElementById("back-to-list").addEventListener("click", () => {
-    document.querySelector(".message-list-panel").classList.add("active");
-    currentChatId = null;
-  });
+  const backToList = document.getElementById("back-to-list");
+  if (backToList) {
+    backToList.addEventListener("click", () => {
+      const listPanel = document.querySelector(".message-list-panel");
+      if (listPanel) listPanel.classList.add("active");
+      currentChatId = null;
+    });
+  }
 
   updateUIFromConfig();
+  navigateTo("dashboard");
 });
 
 function haversineDistance(coords1, coords2) {
@@ -1003,7 +948,7 @@ function renderSkillMarkers(skills) {
       icon: L.divIcon({
         className: "custom-div-icon",
         html: `<div style='background-color:${getCategoryColor(
-          skill.category,
+          skill.category
         )};' class='marker-pin'></div><i class='material-icons'>${
           skill.avatar
         }</i>`,
@@ -1021,9 +966,9 @@ let map;
 let userMarker;
 let radiusCircle;
 let skillMarkers = [];
-currentPage = "dashboard";
 let mapInitialized = false;
 let userLocation = null;
+const DEFAULT_LOCATION = { lat: 28.6139, lng: 77.209 };
 
 function loadMapIfNeeded() {
   if (mapInitialized) return;
@@ -1057,37 +1002,58 @@ function initMap() {
   getUserLocation();
 }
 
+function applyUserLocation(latitude, longitude) {
+  userLocation = { lat: latitude, lng: longitude };
+
+  if (map) {
+    const radius = getRadius();
+    const zoom = getZoomLevel(radius);
+    map.setView([latitude, longitude], zoom);
+
+    if (userMarker) {
+      map.removeLayer(userMarker);
+    }
+    userMarker = L.marker([latitude, longitude])
+      .addTo(map)
+      .bindPopup("You are here");
+
+    drawRadius(latitude, longitude);
+  }
+
+  renderSkillsGrid();
+}
+
+function updateRadiusAndSkills() {
+  if (userLocation && map) {
+    const radius = getRadius();
+    const zoom = getZoomLevel(radius);
+    map.setView([userLocation.lat, userLocation.lng], zoom);
+    drawRadius(userLocation.lat, userLocation.lng);
+  }
+
+  renderSkillsGrid();
+}
+
 function getUserLocation() {
+  if (userLocation) {
+    updateRadiusAndSkills();
+    return;
+  }
+
   if (!navigator.geolocation) {
-    alert("Geolocation not supported");
+    applyUserLocation(DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng);
     return;
   }
 
   navigator.geolocation.getCurrentPosition(
     (position) => {
-      // const { latitude, longitude } = position.coords;
-      const latitude = 28.6139;
-      const longitude = 77.209;
-      userLocation = { lat: latitude, lng: longitude };
-      const radius = getRadius();
-      const zoom = getZoomLevel(radius);
-      map.setView([latitude, longitude], zoom);
-
-      if (userMarker) {
-        map.removeLayer(userMarker);
-      }
-      userMarker = L.marker([latitude, longitude])
-        .addTo(map)
-        .bindPopup("You are here")
-        .openPopup();
-
-      drawRadius(latitude, longitude);
-      renderSkillsGrid();
+      const { latitude, longitude } = position.coords;
+      applyUserLocation(latitude, longitude);
     },
     () => {
-      alert("Unable to retrieve your location");
-      renderSkillsGrid();
+      applyUserLocation(DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng);
     },
+    { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
   );
 }
 
@@ -1136,8 +1102,9 @@ function renderSkills(skills) {
     skillMarkers.push(marker);
   });
 
-  document.getElementById("skills-count").innerText =
-    `${skills.length} skills nearby`;
+  document.getElementById(
+    "skills-count"
+  ).innerText = `${skills.length} skills nearby`;
 }
 
 function stayOnFindSkill() {
