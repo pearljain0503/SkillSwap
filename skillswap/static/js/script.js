@@ -149,11 +149,19 @@ const defaultSampleSkills = [
   },
 ];
 
+defaultSampleSkills.forEach((skill) => {
+  skill.isSample = true;
+});
+
 const serverSkillsRaw = Array.isArray(window.SKILLSWAP_SERVER_SKILLS)
   ? window.SKILLSWAP_SERVER_SKILLS
   : [];
-const currentMemberId = Number(window.SKILLSWAP_CURRENT_MEMBER_ID);
-const hasCurrentMember = Number.isFinite(currentMemberId);
+const currentMemberIdRaw = window.SKILLSWAP_CURRENT_MEMBER_ID;
+const currentMemberId = Number(currentMemberIdRaw);
+const hasCurrentMember =
+  currentMemberIdRaw !== null &&
+  currentMemberIdRaw !== undefined &&
+  Number.isFinite(currentMemberId);
 
 function normalizeServerSkill(skill, takenIds) {
   const name = (skill?.member_name || "Unknown").trim();
@@ -187,6 +195,7 @@ function normalizeServerSkill(skill, takenIds) {
     lat: hasCoords ? lat : DEFAULT_LOCATION.lat,
     lng: hasCoords ? lng : DEFAULT_LOCATION.lng,
     hasLocation: hasCoords,
+    isSample: false,
   };
 }
 
@@ -201,7 +210,7 @@ const serverSkills = serverSkillsRaw
 
 const sampleSkills = [...defaultSampleSkills, ...serverSkills];
 
-const sampleRequests = [
+const defaultSampleRequests = [
   {
     id: 1,
     type: "incoming",
@@ -244,7 +253,15 @@ const sampleRequests = [
   },
 ];
 
-const sampleConversations = [
+const serverRequestsRaw = Array.isArray(window.SKILLSWAP_SERVER_REQUESTS)
+  ? window.SKILLSWAP_SERVER_REQUESTS
+  : [];
+
+const hasServerRequests = Array.isArray(window.SKILLSWAP_SERVER_REQUESTS);
+const useServerRequests = hasServerRequests && hasCurrentMember;
+let requestsData = useServerRequests ? serverRequestsRaw : defaultSampleRequests;
+
+const defaultSampleConversations = [
   {
     id: 1,
     name: "Alex Johnson",
@@ -253,6 +270,7 @@ const sampleConversations = [
     time: "2m ago",
     unread: 2,
     status: "online",
+    requestStatus: "accepted",
   },
   {
     id: 2,
@@ -262,6 +280,7 @@ const sampleConversations = [
     time: "1h ago",
     unread: 0,
     status: "offline",
+    requestStatus: "accepted",
   },
   {
     id: 3,
@@ -271,10 +290,11 @@ const sampleConversations = [
     time: "3h ago",
     unread: 1,
     status: "online",
+    requestStatus: "pending",
   },
 ];
 
-const sampleMessages = {
+const defaultSampleMessages = {
   1: [
     {
       id: 1,
@@ -335,6 +355,25 @@ const sampleMessages = {
   ],
 };
 
+const serverConversationsRaw = Array.isArray(window.SKILLSWAP_SERVER_CONVERSATIONS)
+  ? window.SKILLSWAP_SERVER_CONVERSATIONS
+  : [];
+const serverMessagesRaw =
+  window.SKILLSWAP_SERVER_MESSAGES && typeof window.SKILLSWAP_SERVER_MESSAGES === "object"
+    ? window.SKILLSWAP_SERVER_MESSAGES
+    : {};
+
+const hasServerConversations = Array.isArray(window.SKILLSWAP_SERVER_CONVERSATIONS);
+const hasServerMessages = window.SKILLSWAP_SERVER_MESSAGES !== undefined;
+
+const useServerConversations = hasCurrentMember && hasServerConversations;
+const useServerMessages = hasCurrentMember && hasServerMessages;
+
+let conversationsData = useServerConversations
+  ? serverConversationsRaw
+  : defaultSampleConversations;
+let messagesData = useServerMessages ? serverMessagesRaw : defaultSampleMessages;
+
 // Experience level mapping (slider values are 1-5)
 const EXPERIENCE_MAP = [
   { label: "Novice", credits: 1 },
@@ -379,6 +418,123 @@ function showToast(message, type = "success") {
     toast.style.transform = "translateX(20px)";
     setTimeout(() => toast.remove(), 300);
   }, 3000);
+}
+
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(";").shift();
+  return "";
+}
+
+function getRequestNote() {
+  const noteInput = document.getElementById("request-note");
+  if (noteInput) {
+    return { value: noteInput.value.trim(), element: noteInput };
+  }
+  const dataNote = document.querySelector("[data-request-note]");
+  if (dataNote && "value" in dataNote) {
+    return { value: dataNote.value.trim(), element: dataNote };
+  }
+  return { value: "", element: null };
+}
+
+let syncIntervalId = null;
+let syncInFlight = false;
+
+function updatePendingRequestsCount() {
+  const line = document.getElementById("pending-requests-line");
+  const countEl = document.getElementById("pending-requests-count");
+  if (!line || !countEl) return;
+
+  if (!hasCurrentMember) {
+    line.style.display = "none";
+    return;
+  }
+
+  const pendingCount = requestsData.filter(
+    (req) => req.type === "incoming" && req.status === "pending"
+  ).length;
+
+  if (pendingCount > 0) {
+    countEl.textContent = pendingCount;
+    line.style.display = "";
+  } else {
+    line.style.display = "none";
+  }
+}
+
+function resetChatHeader() {
+  const chatAvatar = document.getElementById("chat-avatar");
+  const chatName = document.getElementById("chat-name");
+  const chatStatus = document.getElementById("chat-status");
+
+  if (chatAvatar) chatAvatar.textContent = "A";
+  if (chatName) chatName.textContent = "Select a conversation";
+  if (chatStatus) chatStatus.textContent = "Start chatting";
+}
+
+function refreshMessagesView() {
+  renderConversations();
+  if (!currentChatId) return;
+
+  const conv = conversationsData.find((c) => c.id === currentChatId);
+  if (!conv) {
+    currentChatId = null;
+    resetChatHeader();
+    renderMessages();
+    return;
+  }
+
+  updateChatHeader(conv);
+  renderMessages();
+}
+
+function syncServerData() {
+  if (!hasCurrentMember || syncInFlight) return;
+
+  syncInFlight = true;
+  fetch("/sync-data/", {
+    credentials: "same-origin",
+  })
+    .then((res) => {
+      if (res.status === 403) {
+        throw new Error("Please sign in to sync data.");
+      }
+      if (!res.ok) throw new Error("Sync failed");
+      return res.json();
+    })
+    .then((data) => {
+    if (Array.isArray(data.requests)) {
+      requestsData = data.requests;
+      if (currentPage === "requests") renderRequests();
+      if (currentPage === "dashboard") updatePendingRequestsCount();
+    }
+
+      if (Array.isArray(data.conversations)) {
+        conversationsData = data.conversations;
+      }
+
+      if (data.messages && typeof data.messages === "object") {
+        messagesData = data.messages;
+      }
+
+      if (currentPage === "messages") {
+        refreshMessagesView();
+      }
+      if (currentPage === "dashboard") {
+        updatePendingRequestsCount();
+      }
+    })
+    .catch(() => {})
+    .finally(() => {
+      syncInFlight = false;
+    });
+}
+
+function startPolling() {
+  if (!hasCurrentMember || syncIntervalId) return;
+  syncIntervalId = setInterval(syncServerData, 12000);
 }
 
 function renderStars(rating) {
@@ -439,8 +595,14 @@ function navigateTo(page) {
   // if (page === "dashboard") renderDashboard();
   if (page === "find-skill") loadMapIfNeeded();
   if (page === "offer-skill") ensureOfferLocation();
-  if (page === "requests") renderRequests();
-  if (page === "messages") renderConversations();
+  if (page === "requests") {
+    renderRequests();
+    syncServerData();
+  }
+  if (page === "messages") {
+    renderConversations();
+    syncServerData();
+  }
 }
 
 // Expose for inline handlers (if any) and easy debugging.
@@ -581,7 +743,98 @@ function renderSkillsGrid() {
 function requestSkill(skillId) {
   const skill = sampleSkills.find((s) => s.id === skillId);
   if (skill) {
-    showToast(`Request sent to ${skill.user} for ${skill.title}!`);
+    if (skill.isSample) {
+      showToast("This is a demo skill. Please request a real user skill.");
+      return;
+    }
+
+    const noteData = getRequestNote();
+    const note = noteData.value;
+
+    fetch("/request-skill/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCookie("csrftoken"),
+      },
+      credentials: "same-origin",
+      body: JSON.stringify({ skill_id: skillId, note }),
+    })
+      .then((res) => {
+        if (res.status === 403) {
+          throw new Error("Please sign in to request skills.");
+        }
+        if (!res.ok) throw new Error("Request failed");
+        return res.json();
+      })
+      .then((data) => {
+        if (data?.status) {
+          const existing = requestsData.find((r) => r.id === data.request_id);
+          const messageText = note || "You requested this skill.";
+          if (existing) {
+            existing.status = data.status;
+            existing.message = messageText;
+          } else {
+            requestsData.push({
+              id: data.request_id,
+              type: "outgoing",
+              skill: skill.title,
+              to: skill.user,
+              avatar: skill.avatar || "?",
+              status: data.status,
+              date: new Date().toLocaleDateString(),
+              message: messageText,
+            });
+          }
+
+          const existingConv = conversationsData.find(
+            (c) => c.id === data.request_id
+          );
+          if (!existingConv) {
+            conversationsData.unshift({
+              id: data.request_id,
+              name: skill.user,
+              avatar: skill.avatar || "?",
+              lastMessage: messageText,
+              time: new Date().toLocaleDateString(),
+              unread: 0,
+              status: "offline",
+              requestStatus: data.status || "pending",
+            });
+          } else {
+            existingConv.lastMessage = messageText;
+            existingConv.time = "now";
+            existingConv.requestStatus = data.status || existingConv.requestStatus;
+          }
+
+          if (!messagesData[data.request_id]) {
+            messagesData[data.request_id] = [];
+          }
+          if (note) {
+            messagesData[data.request_id].push({
+              id: Date.now(),
+              text: note,
+              sent: true,
+              time: new Date().toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+            });
+          }
+
+          if (requestsTab === "outgoing") {
+            renderRequests();
+          }
+        }
+        showToast(`Request sent to ${skill.user} for ${skill.title}!`);
+
+        if (noteData.element) {
+          noteData.element.value = "";
+        }
+      })
+      .catch((err) => {
+        showToast(err.message || "Unable to send request", "error");
+      });
   }
 }
 
@@ -683,7 +936,7 @@ function renderRequests() {
   const list = document.getElementById("requests-list");
   const empty = document.getElementById("requests-empty");
 
-  const filtered = sampleRequests.filter((r) => r.type === requestsTab);
+  const filtered = requestsData.filter((r) => r.type === requestsTab);
 
   // Update tab buttons
   document
@@ -737,12 +990,45 @@ function renderRequests() {
 }
 
 function handleRequest(id, action) {
-  const req = sampleRequests.find((r) => r.id === id);
-  if (req) {
+  const req = requestsData.find((r) => r.id === id);
+  if (!req) return;
+
+  if (!hasCurrentMember) {
     req.status = action === "accept" ? "accepted" : "declined";
     renderRequests();
-    showToast(`Request ${action === "accept" ? "accepted" : "declined"}!`);
+    showToast(`Request ${req.status}!`);
+    return;
   }
+
+  fetch("/update-request/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"),
+    },
+    credentials: "same-origin",
+    body: JSON.stringify({ request_id: id, action }),
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error("Request update failed");
+      return res.json();
+    })
+    .then((data) => {
+      req.status = data.status || (action === "accept" ? "accepted" : "declined");
+      const conv = conversationsData.find((c) => c.id === id);
+      if (conv) {
+        conv.requestStatus = req.status;
+        if (currentChatId === id) {
+          updateChatHeader(conv);
+        }
+      }
+      renderRequests();
+      updatePendingRequestsCount();
+      showToast(`Request ${req.status}!`);
+    })
+    .catch(() => {
+      showToast("Unable to update request", "error");
+    });
 }
 
 // ============================================
@@ -751,7 +1037,16 @@ function handleRequest(id, action) {
 
 function renderConversations() {
   const list = document.getElementById("conversations-list");
-  list.innerHTML = sampleConversations
+  if (!list) return;
+
+  if (!conversationsData.length) {
+    list.innerHTML = `
+      <div class="text-center opacity-50 p-6 text-sm">No conversations yet</div>
+    `;
+    return;
+  }
+
+  list.innerHTML = conversationsData
     .map(
       (conv) => `
     <div class="p-4 border-b border-white/5 cursor-pointer hover:bg-white/5 transition-colors ${
@@ -787,15 +1082,46 @@ function renderConversations() {
     .join("");
 }
 
+function getRequestStatusBadge(status) {
+  if (!status) return "";
+  const normalized = String(status).toLowerCase();
+  if (normalized === "pending") {
+    return '<span class="status-badge status-pending">Pending</span>';
+  }
+  if (normalized === "accepted") {
+    return '<span class="status-badge status-accepted">Accepted</span>';
+  }
+  if (normalized === "declined") {
+    return '<span class="status-badge status-declined">Declined</span>';
+  }
+  return `<span class="status-badge">${normalized}</span>`;
+}
+
+function updateChatHeader(conv) {
+  if (!conv) return;
+  const chatAvatar = document.getElementById("chat-avatar");
+  const chatName = document.getElementById("chat-name");
+  const chatStatus = document.getElementById("chat-status");
+
+  if (chatAvatar) chatAvatar.textContent = conv.avatar || "?";
+  if (chatName) chatName.textContent = conv.name || "Conversation";
+
+  const requestStatusBadge = getRequestStatusBadge(conv.requestStatus);
+  if (chatStatus) {
+    if (requestStatusBadge) {
+      chatStatus.innerHTML = `Request ${requestStatusBadge}`;
+    } else {
+      chatStatus.textContent = "Start chatting";
+    }
+  }
+}
+
 function selectConversation(id) {
   currentChatId = id;
-  const conv = sampleConversations.find((c) => c.id === id);
+  const conv = conversationsData.find((c) => c.id === id);
 
   if (conv) {
-    document.getElementById("chat-avatar").textContent = conv.avatar;
-    document.getElementById("chat-name").textContent = conv.name;
-    document.getElementById("chat-status").textContent =
-      conv.status === "online" ? "Online" : "Offline";
+    updateChatHeader(conv);
 
     // Mark as read
     conv.unread = 0;
@@ -809,7 +1135,7 @@ function selectConversation(id) {
 
 function renderMessages() {
   const container = document.getElementById("chat-messages");
-  const messages = sampleMessages[currentChatId] || [];
+  const messages = messagesData[currentChatId] || [];
 
   if (messages.length === 0) {
     container.innerHTML = `
@@ -840,30 +1166,73 @@ function sendMessage() {
 
   if (!text || !currentChatId) return;
 
-  if (!sampleMessages[currentChatId]) {
-    sampleMessages[currentChatId] = [];
+  if (!messagesData[currentChatId]) {
+    messagesData[currentChatId] = [];
   }
 
-  sampleMessages[currentChatId].push({
-    id: Date.now(),
-    text,
-    sent: true,
-    time: new Date().toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
-  });
+  if (!hasCurrentMember) {
+    messagesData[currentChatId].push({
+      id: Date.now(),
+      text,
+      sent: true,
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    });
 
-  // Update conversation
-  const conv = sampleConversations.find((c) => c.id === currentChatId);
-  if (conv) {
-    conv.lastMessage = text;
-    conv.time = "now";
+    const conv = conversationsData.find((c) => c.id === currentChatId);
+    if (conv) {
+      conv.lastMessage = text;
+      conv.time = "now";
+    }
+
+    input.value = "";
+    renderMessages();
+    renderConversations();
+    return;
   }
 
-  input.value = "";
-  renderMessages();
-  renderConversations();
+  fetch("/send-message/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"),
+    },
+    credentials: "same-origin",
+    body: JSON.stringify({ request_id: currentChatId, text }),
+  })
+    .then((res) => {
+      if (res.status === 403) throw new Error("Please sign in to send messages.");
+      if (!res.ok) throw new Error("Message send failed");
+      return res.json();
+    })
+    .then((data) => {
+      messagesData[currentChatId].push({
+        id: data.id || Date.now(),
+        text,
+        sent: true,
+        time:
+          data.time ||
+          new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+      });
+
+      const conv = conversationsData.find((c) => c.id === currentChatId);
+      if (conv) {
+        conv.lastMessage = text;
+        conv.time = "now";
+      }
+
+      input.value = "";
+      renderMessages();
+      renderConversations();
+    })
+    .catch((err) => {
+      showToast(err.message || "Unable to send message", "error");
+    });
 }
 
 // ============================================
@@ -1046,6 +1415,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   updateUIFromConfig();
+  if (hasCurrentMember) {
+    syncServerData();
+    startPolling();
+  }
+  updatePendingRequestsCount();
   navigateTo("dashboard");
 });
 

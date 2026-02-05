@@ -368,10 +368,13 @@
                 <span>{{ member.full_name }}</span>
                 {% endif %}
               </h1>
-              <p class="opacity-60" id="tagline-text">
+              <p
+                class="opacity-60"
+                id="pending-requests-line"
+                {% if not pending_requests_count %}style="display: none"{% endif %}>
                 You have
                 <span class="text-yellow-400" id="pending-requests-count"
-                  >3</span
+                  >{{ pending_requests_count|default:0 }}</span
                 >
                 pending requests
               </p>
@@ -471,7 +474,7 @@
                     <div
                       class="text-3xl font-bold text-primary-color"
                       id="stat-offers">
-                      5
+                      {{ offers_count|default:0 }}
                     </div>
                     <div class="text-sm opacity-60">Active Offers</div>
                   </div>
@@ -479,7 +482,7 @@
                     <div
                       class="text-3xl font-bold text-cyan-400"
                       id="stat-requests">
-                      8
+                      {{ total_requests_count|default:0 }}
                     </div>
                     <div class="text-sm opacity-60">Total Requests</div>
                   </div>
@@ -487,7 +490,7 @@
                     <div
                       class="text-3xl font-bold text-green-400"
                       id="stat-completed">
-                      12
+                      {{ completed_sessions_count|default:0 }}
                     </div>
                     <div class="text-sm opacity-60">Completed Sessions</div>
                   </div>
@@ -595,6 +598,22 @@
                   </div>
                 </div> -->
                 <div id="map" class="h-48 md:h-64 rounded-xl"></div>
+                <div class="card p-4">
+                  <label
+                    for="request-note"
+                    class="block text-sm font-medium mb-2"
+                    >Request Note (optional)</label
+                  >
+                  <textarea
+                    id="request-note"
+                    class="input-field"
+                    rows="2"
+                    maxlength="250"
+                    placeholder="Add a short note to start the chat..."></textarea>
+                  <div class="text-xs opacity-50 mt-2">
+                    This note becomes the first message in the chat.
+                  </div>
+                </div>
                 <!-- Skills Grid -->
                 <div>
                   <h3 class="font-semibold mb-4">Nearby Skills</h3>
@@ -927,12 +946,24 @@
     </div>
     {{ all_skills_json|json_script:"skills-data" }}
     {{ current_member_id|json_script:"member-id" }}
+    {{ requests_json|json_script:"requests-data" }}
+    {{ conversations_json|json_script:"conversations-data" }}
+    {{ messages_json|json_script:"messages-data" }}
     <script>
       window.SKILLSWAP_SERVER_SKILLS = JSON.parse(
         document.getElementById("skills-data").textContent
       );
       window.SKILLSWAP_CURRENT_MEMBER_ID = JSON.parse(
         document.getElementById("member-id").textContent
+      );
+      window.SKILLSWAP_SERVER_REQUESTS = JSON.parse(
+        document.getElementById("requests-data").textContent
+      );
+      window.SKILLSWAP_SERVER_CONVERSATIONS = JSON.parse(
+        document.getElementById("conversations-data").textContent
+      );
+      window.SKILLSWAP_SERVER_MESSAGES = JSON.parse(
+        document.getElementById("messages-data").textContent
       );
     </script>
     <script src="{% static 'js/script.js' %}"></script>

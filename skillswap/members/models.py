@@ -43,6 +43,12 @@ class CreditWallet(models.Model):
 # 4. Service Session Table
 class ServiceSession(models.Model):
     session_id = models.AutoField(primary_key=True)
+    request = models.OneToOneField(
+        'SkillRequest',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
     skill = models.ForeignKey(Skill, on_delete=models.CASCADE)
     seeker = models.ForeignKey(Member, on_delete=models.CASCADE, related_name='seeker')
     provider = models.ForeignKey(Member, on_delete=models.CASCADE, related_name='provider')
@@ -50,4 +56,48 @@ class ServiceSession(models.Model):
     status = models.CharField(max_length=20)
 
     def __str__(self):
-        return f"Session {self.session_id}"
+        skill_name = self.skill.skill_name if self.skill else "Skill"
+        return (
+            f"Session {self.session_id} - {skill_name} "
+            f"({self.status})"
+        )
+
+
+# 5. Skill Request Table
+class SkillRequest(models.Model):
+    request_id = models.AutoField(primary_key=True)
+    skill = models.ForeignKey(Skill, on_delete=models.CASCADE)
+    requester = models.ForeignKey(
+        Member, on_delete=models.CASCADE, related_name="requests_made"
+    )
+    provider = models.ForeignKey(
+        Member, on_delete=models.CASCADE, related_name="requests_received"
+    )
+    status = models.CharField(max_length=20, default="pending")
+    note = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        skill_name = self.skill.skill_name if self.skill else "Skill"
+        requester_name = self.requester.full_name if self.requester else "Requester"
+        provider_name = self.provider.full_name if self.provider else "Provider"
+        return (
+            f"Request {self.request_id} - {skill_name} "
+            f"({requester_name} → {provider_name}) [{self.status}]"
+        )
+
+
+# 6. Message Table (Chat)
+class Message(models.Model):
+    message_id = models.AutoField(primary_key=True)
+    request = models.ForeignKey(
+        SkillRequest, on_delete=models.CASCADE, related_name="messages"
+    )
+    sender = models.ForeignKey(Member, on_delete=models.CASCADE)
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        sender_name = self.sender.full_name if self.sender else "Sender"
+        preview = (self.text or "").strip()[:30]
+        return f"Message {self.message_id} - {sender_name}: {preview}"
