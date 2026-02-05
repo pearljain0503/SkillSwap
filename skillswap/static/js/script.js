@@ -11,6 +11,8 @@ const defaultConfiguration = {
 
 let config = { ...defaultConfiguration };
 
+const DEFAULT_LOCATION = { lat: 28.6139, lng: 77.209 };
+
 // App state
 let currentUser = null;
 let currentPage = "dashboard";
@@ -59,7 +61,7 @@ function updateUIFromConfig() {
 // ============================================
 
 // Sample data
-const sampleSkills = [
+const defaultSampleSkills = [
   {
     id: 1,
     title: "Guitar Lessons",
@@ -146,6 +148,58 @@ const sampleSkills = [
     lng: 72.8162,
   },
 ];
+
+const serverSkillsRaw = Array.isArray(window.SKILLSWAP_SERVER_SKILLS)
+  ? window.SKILLSWAP_SERVER_SKILLS
+  : [];
+const currentMemberId = Number(window.SKILLSWAP_CURRENT_MEMBER_ID);
+const hasCurrentMember = Number.isFinite(currentMemberId);
+
+function normalizeServerSkill(skill, takenIds) {
+  const name = (skill?.member_name || "Unknown").trim();
+  const avatar = name ? name.charAt(0).toUpperCase() : "?";
+  const lat = Number(skill?.latitude);
+  const lng = Number(skill?.longitude);
+  const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
+  const rating = Number(skill?.rating);
+  const rate = Number(skill?.rate);
+
+  let id = Number(skill?.id);
+  if (!Number.isFinite(id)) {
+    id = Date.now() + Math.floor(Math.random() * 1000);
+  }
+  if (takenIds.has(id)) {
+    id += 1000000;
+  }
+  takenIds.add(id);
+
+  return {
+    id,
+    title: skill?.skill_name || "Untitled Skill",
+    category: skill?.category || "education",
+    description: skill?.description || "",
+    rating: Number.isFinite(rating) ? rating : 5.0,
+    distance: hasCoords ? "—" : "Location not set",
+    rate: Number.isFinite(rate) ? rate : 1,
+    user: name || "Unknown",
+    avatar,
+    available: true,
+    lat: hasCoords ? lat : DEFAULT_LOCATION.lat,
+    lng: hasCoords ? lng : DEFAULT_LOCATION.lng,
+    hasLocation: hasCoords,
+  };
+}
+
+const takenIds = new Set(defaultSampleSkills.map((skill) => skill.id));
+const serverSkills = serverSkillsRaw
+  .filter((skill) => {
+    if (!hasCurrentMember) return true;
+    const skillMemberId = Number(skill?.member_id);
+    return !Number.isFinite(skillMemberId) || skillMemberId !== currentMemberId;
+  })
+  .map((skill) => normalizeServerSkill(skill, takenIds));
+
+const sampleSkills = [...defaultSampleSkills, ...serverSkills];
 
 const sampleRequests = [
   {
@@ -384,6 +438,7 @@ function navigateTo(page) {
   // page-specific logic
   // if (page === "dashboard") renderDashboard();
   if (page === "find-skill") loadMapIfNeeded();
+  if (page === "offer-skill") ensureOfferLocation();
   if (page === "requests") renderRequests();
   if (page === "messages") renderConversations();
 }
@@ -450,6 +505,9 @@ function renderSkillsGrid() {
   const radius = getRadius();
   if (userLocation) {
     filtered = filtered.filter((skill) => {
+      if (skill.hasLocation === false) {
+        return true;
+      }
       const distance = haversineDistance(userLocation, {
         lat: skill.lat,
         lng: skill.lng,
@@ -530,6 +588,56 @@ function requestSkill(skillId) {
 // ============================================
 // OFFER SKILL
 // ============================================
+
+function setOfferLocationFields(lat, lng, statusMessage) {
+  const latInput = document.getElementById("offer-lat");
+  const lngInput = document.getElementById("offer-lng");
+  const status = document.getElementById("offer-location-status");
+
+  if (latInput) latInput.value = lat;
+  if (lngInput) lngInput.value = lng;
+  if (status && statusMessage) status.textContent = statusMessage;
+}
+
+function ensureOfferLocation() {
+  const latInput = document.getElementById("offer-lat");
+  const lngInput = document.getElementById("offer-lng");
+  if (!latInput || !lngInput) return;
+
+  if (latInput.value && lngInput.value) {
+    setOfferLocationFields(latInput.value, lngInput.value, "Location captured");
+    return;
+  }
+
+  if (!navigator.geolocation) {
+    setOfferLocationFields(
+      DEFAULT_LOCATION.lat,
+      DEFAULT_LOCATION.lng,
+      "Location set to default area."
+    );
+    return;
+  }
+
+  setOfferLocationFields("", "", "Detecting your location...");
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      setOfferLocationFields(
+        position.coords.latitude,
+        position.coords.longitude,
+        "Location captured"
+      );
+    },
+    () => {
+      setOfferLocationFields(
+        DEFAULT_LOCATION.lat,
+        DEFAULT_LOCATION.lng,
+        "Location set to default area."
+      );
+    },
+    { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+  );
+}
 
 function handleOfferSubmit(e) {
   // e.preventDefault();
@@ -851,18 +959,36 @@ document.addEventListener("DOMContentLoaded", () => {
   const experienceSlider = document.getElementById("experience-slider");
   const experienceValue = document.getElementById("experience-value");
   const creditsInput = document.getElementById("offer-rate");
+  const creditsInputHidden = document.getElementById("offer-rate-hidden");
 
   function updateExperienceAndCredits() {
     if (!experienceSlider) return;
     const data = getExperienceData(experienceSlider.value);
     if (experienceValue) experienceValue.textContent = data.label;
     if (creditsInput) creditsInput.value = data.credits;
+    if (creditsInputHidden) creditsInputHidden.value = data.credits;
   }
 
   if (experienceSlider) {
     experienceSlider.addEventListener("input", updateExperienceAndCredits);
     // Initialize on load
     updateExperienceAndCredits();
+  }
+
+  // Offer form location fallback
+  const offerForm = document.getElementById("offer-form");
+  if (offerForm) {
+    offerForm.addEventListener("submit", () => {
+      const latInput = document.getElementById("offer-lat");
+      const lngInput = document.getElementById("offer-lng");
+      if (latInput && lngInput && (!latInput.value || !lngInput.value)) {
+        setOfferLocationFields(
+          DEFAULT_LOCATION.lat,
+          DEFAULT_LOCATION.lng,
+          "Location set to default area."
+        );
+      }
+    });
   }
 
   // Session type chips
@@ -943,23 +1069,25 @@ function renderSkillMarkers(skills) {
   skillMarkers.forEach((marker) => map.removeLayer(marker));
   skillMarkers = [];
 
-  skills.forEach((skill) => {
-    const marker = L.marker([skill.lat, skill.lng], {
-      icon: L.divIcon({
-        className: "custom-div-icon",
-        html: `<div style='background-color:${getCategoryColor(
-          skill.category
-        )};' class='marker-pin'></div><i class='material-icons'>${
-          skill.avatar
-        }</i>`,
-        iconSize: [30, 42],
-        iconAnchor: [15, 42],
-      }),
-    })
-      .addTo(map)
-      .bindPopup(`<b>${skill.title}</b><br>${skill.user}`);
-    skillMarkers.push(marker);
-  });
+  skills
+    .filter((skill) => skill.hasLocation !== false)
+    .forEach((skill) => {
+      const marker = L.marker([skill.lat, skill.lng], {
+        icon: L.divIcon({
+          className: "custom-div-icon",
+          html: `<div style='background-color:${getCategoryColor(
+            skill.category
+          )};' class='marker-pin'></div><i class='material-icons'>${
+            skill.avatar
+          }</i>`,
+          iconSize: [30, 42],
+          iconAnchor: [15, 42],
+        }),
+      })
+        .addTo(map)
+        .bindPopup(`<b>${skill.title}</b><br>${skill.user}`);
+      skillMarkers.push(marker);
+    });
 }
 
 let map;
@@ -968,7 +1096,6 @@ let radiusCircle;
 let skillMarkers = [];
 let mapInitialized = false;
 let userLocation = null;
-const DEFAULT_LOCATION = { lat: 28.6139, lng: 77.209 };
 
 function loadMapIfNeeded() {
   if (mapInitialized) return;

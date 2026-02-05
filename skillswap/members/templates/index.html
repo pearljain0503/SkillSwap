@@ -627,7 +627,10 @@
                       class="block text-sm font-medium mb-2"
                       >Category</label
                     >
-                    <select id="offer-category" class="input-field">
+                    <select
+                      id="offer-category"
+                      name="category"
+                      class="input-field">
                       <option value="">Select a category</option>
                       <option value="education">Education</option>
                       <option value="technology">Technology</option>
@@ -669,6 +672,18 @@
                     </div>
                   </div>
                   <div>
+                    <label class="block text-sm font-medium mb-2"
+                      >Location</label
+                    >
+                    <div
+                      class="text-sm opacity-60"
+                      id="offer-location-status">
+                      Detecting your location...
+                    </div>
+                    <input type="hidden" id="offer-lat" name="latitude" />
+                    <input type="hidden" id="offer-lng" name="longitude" />
+                  </div>
+                  <div>
                     <label class="block text-sm font-medium mb-3"
                       >Experience Level</label
                     >
@@ -705,6 +720,11 @@
                         class="input-field"
                         value="1"
                         disabled />
+                      <input
+                        type="hidden"
+                        id="offer-rate-hidden"
+                        name="rate"
+                        value="1" />
                     </div>
                     <div>
                       <label class="block text-sm font-medium mb-2"
@@ -905,6 +925,16 @@
       <!-- Toast Container -->
       <div class="toast-container" id="toast-container"></div>
     </div>
+    {{ all_skills_json|json_script:"skills-data" }}
+    {{ current_member_id|json_script:"member-id" }}
+    <script>
+      window.SKILLSWAP_SERVER_SKILLS = JSON.parse(
+        document.getElementById("skills-data").textContent
+      );
+      window.SKILLSWAP_CURRENT_MEMBER_ID = JSON.parse(
+        document.getElementById("member-id").textContent
+      );
+    </script>
     <script src="{% static 'js/script.js' %}"></script>
     <!-- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c69fe8927798513',t:'MTc2OTg3MDc0Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
  <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c69fe8927798513',t:'MTc2OTg3MDc0Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script> -->

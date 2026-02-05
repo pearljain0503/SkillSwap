@@ -5,6 +5,50 @@ from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
+def _parse_float(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+def _parse_int(value, default=1):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _build_index_context(member, skills, extra=None):
+    all_skills = Skill.objects.select_related("member").all()
+    skills_payload = [
+        {
+            "id": skill.skill_id,
+            "skill_name": skill.skill_name,
+            "description": skill.description,
+            "category": skill.category,
+            "rate": skill.rate,
+            "rating": float(skill.rating) if skill.rating is not None else None,
+            "latitude": skill.latitude,
+            "longitude": skill.longitude,
+            "member_id": skill.member.member_id if skill.member else None,
+            "member_email": skill.member.email if skill.member else None,
+            "member_name": skill.member.full_name if skill.member else "Unknown",
+        }
+        for skill in all_skills
+    ]
+
+    context = {
+        "skills": skills,
+        "member": member,
+        "current_member_id": member.member_id if member else None,
+        "all_skills_json": skills_payload,
+    }
+
+    if extra:
+        context.update(extra)
+
+    return context
+
 
 def get_logged_in_member(request):
     if not request.user.is_authenticated:
@@ -28,16 +72,11 @@ def index(request):
     if request.user.is_authenticated:
         member = get_logged_in_member(request)
         skills = Skill.objects.filter(member=member)
+    else:
+        member = None
+        skills = []
 
-        return render(request, 'index.html', {
-            'skills': skills,
-            'member': member,
-        })
-
-    return render(request, 'index.html', {
-        'skills': [],
-        'member': None,
-    })
+    return render(request, "index.html", _build_index_context(member, skills))
 
 
 
@@ -52,7 +91,12 @@ def add_skill(request):
         Skill.objects.create(
             member=member,
             skill_name=request.POST.get('skill_name'),
-            description=request.POST.get('description')
+            description=request.POST.get('description'),
+            category=request.POST.get('category') or "education",
+            rate=_parse_int(request.POST.get('rate'), default=1),
+            rating=_parse_float(request.POST.get('rating')) or 5.0,
+            latitude=_parse_float(request.POST.get('latitude')),
+            longitude=_parse_float(request.POST.get('longitude')),
         )
 
     return redirect('index')
@@ -86,9 +130,17 @@ def login_user(request):
             login(request, user)
             return redirect("index")
 
-        return render(request, "index.html", {
-            "login_error": "Invalid email or password"
-        })
+        member = get_logged_in_member(request)
+        skills = Skill.objects.filter(member=member) if member else []
+        return render(
+            request,
+            "index.html",
+            _build_index_context(
+                member,
+                skills,
+                {"login_error": "Invalid email or password"},
+            ),
+        )
 
 
 def signup_user(request):
@@ -98,9 +150,17 @@ def signup_user(request):
         password = request.POST.get("password")
 
         if User.objects.filter(username=email).exists():
-            return render(request, "index.html", {
-                "signup_error": "Email already exists"
-            })
+            member = get_logged_in_member(request)
+            skills = Skill.objects.filter(member=member) if member else []
+            return render(
+                request,
+                "index.html",
+                _build_index_context(
+                    member,
+                    skills,
+                    {"signup_error": "Email already exists"},
+                ),
+            )
 
         user = User.objects.create_user(
             username=email,   # REQUIRED
@@ -120,4 +180,3 @@ def signup_user(request):
 def logout_user(request):
     logout(request)
     return redirect("index")
-

@@ -20,6 +20,11 @@ class Skill(models.Model):
     member = models.ForeignKey(Member, on_delete=models.CASCADE)
     skill_name = models.CharField(max_length=100)
     description = models.TextField()
+    category = models.CharField(max_length=50, default="education")
+    rate = models.IntegerField(default=1)
+    rating = models.FloatField(default=5.0)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
 
     def __str__(self):
         return self.skill_name
