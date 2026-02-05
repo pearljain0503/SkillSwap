@@ -9,6 +9,9 @@ from django.views.decorators.csrf import csrf_exempt
 def get_logged_in_member(request):
     if not request.user.is_authenticated:
         return None
+    
+    if request.user.is_superuser:
+        return None
 
     member, _ = Member.objects.get_or_create(
         email=request.user.email,
