@@ -1,5 +1,5 @@
 from .models import Member, Skill, CreditWallet, ServiceSession
-
+from django.db import transaction
 
 # 1. STORE DATA (Create Member)
 def create_member(name, email, location):
@@ -32,19 +32,24 @@ def search_skills(keyword):
 
 
 # 5. UPDATE DATA (Transfer Credits)
-def transfer_credits(seeker, provider, hours):
-    seeker_wallet = CreditWallet.objects.get(member=seeker)
-    provider_wallet = CreditWallet.objects.get(member=provider)
+def transfer_credits(session):
+    seeker_wallet = CreditWallet.objects.get(member=session.seeker)
+    provider_wallet = CreditWallet.objects.get(member=session.provider)
 
-    if seeker_wallet.credits >= hours:
-        seeker_wallet.credits -= hours
-        provider_wallet.credits += hours
+    if seeker_wallet.credits < session.hours:
+        return False
+
+    with transaction.atomic():
+        seeker_wallet.credits -= session.hours
+        provider_wallet.credits += session.hours
 
         seeker_wallet.save()
         provider_wallet.save()
 
-        return True
-    return False
+        session.status = "completed"
+        session.save()
+
+    return True
 
 
 # 6. STORE SESSION DATA
@@ -54,9 +59,8 @@ def create_service_session(skill, seeker, provider, hours):
         seeker=seeker,
         provider=provider,
         hours=hours,
-        status="Completed"
+        status="pending"  # ✅ FIXED
     )
-
 
 # 7. UPDATE DATA (Change Session Status)
 def update_session_status(session, new_status):

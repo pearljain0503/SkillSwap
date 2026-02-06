@@ -209,6 +209,10 @@ const serverSkills = serverSkillsRaw
   .map((skill) => normalizeServerSkill(skill, takenIds));
 
 const sampleSkills = [...defaultSampleSkills, ...serverSkills];
+// const sampleSkills =
+//   hasCurrentMember && serverSkills.length > 0
+//     ? serverSkills
+//     : defaultSampleSkills;
 
 const defaultSampleRequests = [
   {
@@ -259,7 +263,9 @@ const serverRequestsRaw = Array.isArray(window.SKILLSWAP_SERVER_REQUESTS)
 
 const hasServerRequests = Array.isArray(window.SKILLSWAP_SERVER_REQUESTS);
 const useServerRequests = hasServerRequests && hasCurrentMember;
-let requestsData = useServerRequests ? serverRequestsRaw : defaultSampleRequests;
+let requestsData = useServerRequests
+  ? serverRequestsRaw
+  : defaultSampleRequests;
 
 const defaultSampleConversations = [
   {
@@ -355,15 +361,20 @@ const defaultSampleMessages = {
   ],
 };
 
-const serverConversationsRaw = Array.isArray(window.SKILLSWAP_SERVER_CONVERSATIONS)
+const serverConversationsRaw = Array.isArray(
+  window.SKILLSWAP_SERVER_CONVERSATIONS,
+)
   ? window.SKILLSWAP_SERVER_CONVERSATIONS
   : [];
 const serverMessagesRaw =
-  window.SKILLSWAP_SERVER_MESSAGES && typeof window.SKILLSWAP_SERVER_MESSAGES === "object"
+  window.SKILLSWAP_SERVER_MESSAGES &&
+  typeof window.SKILLSWAP_SERVER_MESSAGES === "object"
     ? window.SKILLSWAP_SERVER_MESSAGES
     : {};
 
-const hasServerConversations = Array.isArray(window.SKILLSWAP_SERVER_CONVERSATIONS);
+const hasServerConversations = Array.isArray(
+  window.SKILLSWAP_SERVER_CONVERSATIONS,
+);
 const hasServerMessages = window.SKILLSWAP_SERVER_MESSAGES !== undefined;
 
 const useServerConversations = hasCurrentMember && hasServerConversations;
@@ -372,7 +383,9 @@ const useServerMessages = hasCurrentMember && hasServerMessages;
 let conversationsData = useServerConversations
   ? serverConversationsRaw
   : defaultSampleConversations;
-let messagesData = useServerMessages ? serverMessagesRaw : defaultSampleMessages;
+let messagesData = useServerMessages
+  ? serverMessagesRaw
+  : defaultSampleMessages;
 
 // Experience level mapping (slider values are 1-5)
 const EXPERIENCE_MAP = [
@@ -453,7 +466,7 @@ function updatePendingRequestsCount() {
   }
 
   const pendingCount = requestsData.filter(
-    (req) => req.type === "incoming" && req.status === "pending"
+    (req) => req.type === "incoming" && req.status === "pending",
   ).length;
 
   if (pendingCount > 0) {
@@ -505,11 +518,10 @@ function syncServerData() {
       return res.json();
     })
     .then((data) => {
-    if (Array.isArray(data.requests)) {
-      requestsData = data.requests;
-      if (currentPage === "requests") renderRequests();
-      if (currentPage === "dashboard") updatePendingRequestsCount();
-    }
+      if (Array.isArray(data.requests)) {
+        requestsData = data.requests;
+        if (currentPage === "requests") renderRequests();
+      }
 
       if (Array.isArray(data.conversations)) {
         conversationsData = data.conversations;
@@ -519,13 +531,26 @@ function syncServerData() {
         messagesData = data.messages;
       }
 
-      if (currentPage === "messages") {
-        refreshMessagesView();
+      if (typeof data.wallet_credits === "number") {
+        const totalCredits = document.getElementById("total-credits");
+        if (totalCredits) {
+          totalCredits.textContent = data.wallet_credits;
+        }
       }
-      if (currentPage === "dashboard") {
-        updatePendingRequestsCount();
+
+      if (typeof data.pending_credits === "number") {
+        const pendingEl = document.querySelector(".text-yellow-400");
+        if (pendingEl) {
+          pendingEl.textContent = `-${data.pending_credits}`;
+          pendingEl.style.display =
+            data.pending_credits > 0 ? "inline" : "none";
+        }
       }
+
+      if (currentPage === "messages") refreshMessagesView();
+      updatePendingRequestsCount();
     })
+
     .catch(() => {})
     .finally(() => {
       syncInFlight = false;
@@ -625,11 +650,19 @@ function checkAuth() {
 }
 
 function showAuthModal() {
-  document.getElementById("auth-modal").classList.add("active");
+  const modal = document.getElementById("auth-modal");
+  if (modal) modal.classList.add("active");
+
+  // 🔑 THIS WAS MISSING
+  document.body.classList.add("auth-open");
 }
 
 function hideAuthModal() {
-  document.getElementById("auth-modal").classList.remove("active");
+  const modal = document.getElementById("auth-modal");
+  if (modal) modal.classList.remove("active");
+
+  // 🔑 THIS WAS MISSING
+  document.body.classList.remove("auth-open");
 }
 
 function updateUserUI() {
@@ -640,9 +673,8 @@ function updateUserUI() {
     .toUpperCase();
   document.getElementById("user-name-display").textContent = currentUser.name;
   document.getElementById("total-credits").textContent = currentUser.credits;
-  document.getElementById(
-    "pending-credits"
-  ).textContent = `+${currentUser.pendingCredits}`;
+  document.getElementById("pending-credits").textContent =
+    `+${currentUser.pendingCredits}`;
 
   const dashboardName = document.getElementById("dashboard-user-name");
   if (dashboardName) dashboardName.textContent = currentUser.name;
@@ -665,16 +697,32 @@ function renderSkillsGrid() {
   let filtered = [...sampleSkills];
 
   const radius = getRadius();
+  // if (userLocation) {
+  //   filtered = filtered.filter((skill) => {
+  //     if (skill.hasLocation === false) {
+  //       return true;
+  //     }
+  //     const distance = haversineDistance(userLocation, {
+  //       lat: skill.lat,
+  //       lng: skill.lng,
+  //     });
+  //     skill.distance = `${distance.toFixed(1)} km`; // Update distance on the skill object
+  //     return distance <= radius;
+  //   });
+  // }
   if (userLocation) {
     filtered = filtered.filter((skill) => {
-      if (skill.hasLocation === false) {
+      if (!skill.hasLocation) {
+        skill.distance = "Location not set";
         return true;
       }
+
       const distance = haversineDistance(userLocation, {
         lat: skill.lat,
         lng: skill.lng,
       });
-      skill.distance = `${distance.toFixed(1)} km`; // Update distance on the skill object
+
+      skill.distance = `${distance.toFixed(1)} km`;
       return distance <= radius;
     });
   }
@@ -689,7 +737,7 @@ function renderSkillsGrid() {
     filtered = filtered.filter(
       (s) =>
         s.title.toLowerCase().includes(searchTerm) ||
-        s.description.toLowerCase().includes(searchTerm)
+        s.description.toLowerCase().includes(searchTerm),
     );
   }
 
@@ -705,7 +753,7 @@ function renderSkillsGrid() {
       (skill) => `
     <div class="skill-card flex gap-4">
       <div class="avatar-lg flex-shrink-0" style="background: linear-gradient(135deg, ${getCategoryColor(
-        skill.category
+        skill.category,
       )}, ${getCategoryColor(skill.category)}aa)">
         ${skill.avatar}
       </div>
@@ -716,10 +764,10 @@ function renderSkillsGrid() {
             <p class="text-sm opacity-60">${skill.user} · ${skill.distance}</p>
           </div>
           <span class="pill" style="background: ${getCategoryColor(
-            skill.category
+            skill.category,
           )}20; color: ${getCategoryColor(skill.category)}">${
-        skill.rate
-      } credit/hr</span>
+            skill.rate
+          } credit/hr</span>
         </div>
         <p class="text-sm opacity-70 mt-2 mb-3">${skill.description}</p>
         <div class="flex items-center justify-between">
@@ -735,7 +783,7 @@ function renderSkillsGrid() {
         </div>
       </div>
     </div>
-  `
+  `,
     )
     .join("");
 }
@@ -788,7 +836,7 @@ function requestSkill(skillId) {
           }
 
           const existingConv = conversationsData.find(
-            (c) => c.id === data.request_id
+            (c) => c.id === data.request_id,
           );
           if (!existingConv) {
             conversationsData.unshift({
@@ -804,7 +852,8 @@ function requestSkill(skillId) {
           } else {
             existingConv.lastMessage = messageText;
             existingConv.time = "now";
-            existingConv.requestStatus = data.status || existingConv.requestStatus;
+            existingConv.requestStatus =
+              data.status || existingConv.requestStatus;
           }
 
           if (!messagesData[data.request_id]) {
@@ -866,7 +915,7 @@ function ensureOfferLocation() {
     setOfferLocationFields(
       DEFAULT_LOCATION.lat,
       DEFAULT_LOCATION.lng,
-      "Location set to default area."
+      "Location set to default area.",
     );
     return;
   }
@@ -878,17 +927,17 @@ function ensureOfferLocation() {
       setOfferLocationFields(
         position.coords.latitude,
         position.coords.longitude,
-        "Location captured"
+        "Location captured",
       );
     },
     () => {
       setOfferLocationFields(
         DEFAULT_LOCATION.lat,
         DEFAULT_LOCATION.lng,
-        "Location set to default area."
+        "Location set to default area.",
       );
     },
-    { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+    { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 },
   );
 }
 
@@ -931,62 +980,104 @@ function handleOfferSubmit(e) {
 // ============================================
 // REQUESTS
 // ============================================
-
 function renderRequests() {
   const list = document.getElementById("requests-list");
   const empty = document.getElementById("requests-empty");
 
+  if (!list || !empty) return;
+
   const filtered = requestsData.filter((r) => r.type === requestsTab);
 
-  // Update tab buttons
+  // Toggle tabs
   document
     .getElementById("tab-incoming")
-    .classList.toggle("active", requestsTab === "incoming");
+    ?.classList.toggle("active", requestsTab === "incoming");
+
   document
     .getElementById("tab-outgoing")
-    .classList.toggle("active", requestsTab === "outgoing");
+    ?.classList.toggle("active", requestsTab === "outgoing");
 
   if (filtered.length === 0) {
     list.innerHTML = "";
     empty.classList.remove("hidden");
-  } else {
-    empty.classList.add("hidden");
-    list.innerHTML = filtered
-      .map(
-        (req) => `
+    return;
+  }
+
+  empty.classList.add("hidden");
+
+  list.innerHTML = filtered
+    .map(
+      (req) => `
       <div class="card p-5">
         <div class="flex items-start gap-4">
-          <div class="avatar-lg">${req.avatar}</div>
+          <div class="avatar-lg">${req.avatar || "?"}</div>
+
           <div class="flex-1">
             <div class="flex items-start justify-between mb-2">
               <div>
-                <h4 class="font-semibold">${
-                  req.type === "incoming" ? req.from : req.to
-                }</h4>
-                <p class="text-sm opacity-60">${req.skill} · ${req.date}</p>
+                <h4 class="font-semibold">
+                  ${req.type === "incoming" ? req.from : req.to}
+                </h4>
+                <p class="text-sm opacity-60">
+                  ${req.skill} · ${req.date}
+                </p>
               </div>
-              <span class="status-badge status-${req.status}">${
-          req.status
-        }</span>
+
+              <span class="status-badge status-${req.status}">
+                ${req.status}
+              </span>
             </div>
-            <p class="text-sm opacity-70 mb-4">${req.message}</p>
-            ${
-              req.status === "pending" && req.type === "incoming"
-                ? `
-              <div class="flex gap-2">
-                <button class="btn btn-primary text-sm py-2" onclick="handleRequest(${req.id}, 'accept')">Accept</button>
-                <button class="btn btn-ghost text-sm py-2" onclick="handleRequest(${req.id}, 'decline')">Decline</button>
-              </div>
-            `
-                : ""
-            }
+
+            <p class="text-sm opacity-70 mb-3">
+              ${req.message || ""}
+            </p>
+
+            <!-- ACTION BUTTONS -->
+            <div class="flex flex-wrap gap-2">
+
+              ${
+                req.status === "pending" && req.type === "incoming"
+                  ? `
+                    <button
+                      class="px-4 py-2 rounded-lg text-sm font-medium
+                             bg-indigo-500 hover:bg-indigo-600
+                             text-white transition"
+                      onclick="handleRequest(${req.id}, 'accept')">
+                      Accept
+                    </button>
+
+                    <button
+                      class="px-4 py-2 rounded-lg text-sm font-medium
+                             bg-gray-200 hover:bg-gray-300
+                             text-gray-800 transition"
+                      onclick="handleRequest(${req.id}, 'decline')">
+                      Decline
+                    </button>
+                  `
+                  : ""
+              }
+
+              ${
+                req.can_complete
+                  ? `
+                    <button
+                      class="px-4 py-2 rounded-lg text-sm font-semibold
+                             bg-green-500 hover:bg-green-600
+                             text-white transition shadow-sm"
+                      onclick="completeSession(${req.session_id})">
+                      ✔ Mark Complete
+                    </button>
+                  `
+                  : ""
+              }
+
+            </div>
           </div>
         </div>
       </div>
-    `
-      )
-      .join("");
-  }
+    `,
+    )
+    .join("");
 }
 
 function handleRequest(id, action) {
@@ -1014,7 +1105,8 @@ function handleRequest(id, action) {
       return res.json();
     })
     .then((data) => {
-      req.status = data.status || (action === "accept" ? "accepted" : "declined");
+      req.status =
+        data.status || (action === "accept" ? "accepted" : "declined");
       const conv = conversationsData.find((c) => c.id === id);
       if (conv) {
         conv.requestStatus = req.status;
@@ -1024,6 +1116,7 @@ function handleRequest(id, action) {
       }
       renderRequests();
       updatePendingRequestsCount();
+      syncServerData();
       showToast(`Request ${req.status}!`);
     })
     .catch(() => {
@@ -1077,7 +1170,7 @@ function renderConversations() {
         </div>
       </div>
     </div>
-  `
+  `,
     )
     .join("");
 }
@@ -1099,6 +1192,7 @@ function getRequestStatusBadge(status) {
 
 function updateChatHeader(conv) {
   if (!conv) return;
+
   const chatAvatar = document.getElementById("chat-avatar");
   const chatName = document.getElementById("chat-name");
   const chatStatus = document.getElementById("chat-status");
@@ -1106,15 +1200,24 @@ function updateChatHeader(conv) {
   if (chatAvatar) chatAvatar.textContent = conv.avatar || "?";
   if (chatName) chatName.textContent = conv.name || "Conversation";
 
-  const requestStatusBadge = getRequestStatusBadge(conv.requestStatus);
-  if (chatStatus) {
-    if (requestStatusBadge) {
-      chatStatus.innerHTML = `Request ${requestStatusBadge}`;
-    } else {
-      chatStatus.textContent = "Start chatting";
-    }
+  if (!chatStatus) return;
+
+  // ✅ PROVIDER-ONLY MARK COMPLETE
+  if (conv.can_complete && conv.session_id) {
+    chatStatus.innerHTML = `
+      <button
+        class="px-4 py-2 rounded-lg text-sm font-semibold
+               bg-green-500 hover:bg-green-600
+               text-white transition"
+        onclick="completeSession(${conv.session_id})">
+        ✔ Mark Completed
+      </button>
+    `;
+  } else {
+    chatStatus.innerHTML = getRequestStatusBadge(conv.requestStatus);
   }
 }
+
 
 function selectConversation(id) {
   currentChatId = id;
@@ -1153,7 +1256,7 @@ function renderMessages() {
       <p>${msg.text}</p>
       <span class="text-xs opacity-50 mt-1 block">${msg.time}</span>
     </div>
-  `
+  `,
     )
     .join("");
 
@@ -1203,7 +1306,8 @@ function sendMessage() {
     body: JSON.stringify({ request_id: currentChatId, text }),
   })
     .then((res) => {
-      if (res.status === 403) throw new Error("Please sign in to send messages.");
+      if (res.status === 403)
+        throw new Error("Please sign in to send messages.");
       if (!res.ok) throw new Error("Message send failed");
       return res.json();
     })
@@ -1240,11 +1344,12 @@ function sendMessage() {
 // ============================================
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Auth check (based on server-rendered data attribute)
   const isLoggedIn = document.body.dataset.auth === "true";
+
   if (!isLoggedIn) {
-    const authModal = document.getElementById("auth-modal");
-    if (authModal) authModal.classList.add("active");
+    showAuthModal(); // ✅ USE FUNCTION
+  } else {
+    hideAuthModal();
   }
 
   // Navigation (delegate so SVG/span clicks still work)
@@ -1354,7 +1459,7 @@ document.addEventListener("DOMContentLoaded", () => {
         setOfferLocationFields(
           DEFAULT_LOCATION.lat,
           DEFAULT_LOCATION.lng,
-          "Location set to default area."
+          "Location set to default area.",
         );
       }
     });
@@ -1450,7 +1555,7 @@ function renderSkillMarkers(skills) {
         icon: L.divIcon({
           className: "custom-div-icon",
           html: `<div style='background-color:${getCategoryColor(
-            skill.category
+            skill.category,
           )};' class='marker-pin'></div><i class='material-icons'>${
             skill.avatar
           }</i>`,
@@ -1554,7 +1659,7 @@ function getUserLocation() {
     () => {
       applyUserLocation(DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng);
     },
-    { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+    { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 },
   );
 }
 
@@ -1603,9 +1708,8 @@ function renderSkills(skills) {
     skillMarkers.push(marker);
   });
 
-  document.getElementById(
-    "skills-count"
-  ).innerText = `${skills.length} skills nearby`;
+  document.getElementById("skills-count").innerText =
+    `${skills.length} skills nearby`;
 }
 
 function stayOnFindSkill() {
@@ -1613,3 +1717,38 @@ function stayOnFindSkill() {
     navigateTo("find-skill");
   }, 50);
 }
+function completeSession(sessionId) {
+  if (!sessionId) return;
+
+  fetch("/complete-session/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"),
+    },
+    credentials: "same-origin",
+    body: JSON.stringify({ session_id: sessionId }),
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error("Failed to complete session");
+      return res.json();
+    })
+    .then(() => {
+      showToast("Session marked as completed!");
+
+      // 🔁 force refresh
+      syncServerData();
+
+      // 🔄 remove button instantly
+      const conv = conversationsData.find(c => c.session_id === sessionId);
+      if (conv) {
+        conv.can_complete = false;
+        conv.requestStatus = "completed";
+        updateChatHeader(conv);
+      }
+    })
+    .catch(() => {
+      showToast("Unable to complete session", "error");
+    });
+}
+

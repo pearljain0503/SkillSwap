@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Skill, Member, SkillRequest, Message, ServiceSession
+from .models import Skill, Member, SkillRequest, Message, ServiceSession,CreditWallet
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.http import JsonResponse
@@ -7,6 +7,11 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
 import json
 from collections import defaultdict
+from django.db import transaction
+from django.shortcuts import get_object_or_404
+from django.db.models import Sum
+from .models import ServiceSession
+
 
 def _parse_float(value):
     try:
@@ -38,18 +43,25 @@ def _build_requests_payload(member):
         return name[0].upper() if name else "?"
 
     for req in incoming:
-        requests_payload.append(
-            {
-                "id": req.request_id,
-                "type": "incoming",
-                "skill": req.skill.skill_name if req.skill else "Skill",
-                "from": req.requester.full_name if req.requester else "Unknown",
-                "avatar": safe_avatar(req.requester.full_name if req.requester else ""),
-                "status": req.status,
-                "date": req.created_at.strftime("%b %d, %Y"),
-                "message": req.note or "Wants to learn your skill.",
-            }
-        )
+        session = ServiceSession.objects.filter(request=req).first()
+
+    requests_payload.append({
+        "id": req.request_id,
+        "type": "incoming",
+        "skill": req.skill.skill_name,
+        "from": req.requester.full_name,
+        "avatar": safe_avatar(req.requester.full_name),
+        "status": req.status,
+        "date": req.created_at.strftime("%b %d, %Y"),
+        "message": req.note or "Wants to learn your skill.",
+        "session_id": session.session_id if session else None,
+        "can_complete": (
+            session is not None and
+            session.status == "pending" and
+            req.provider == member
+        ),
+    })
+
 
     for req in outgoing:
         requests_payload.append(
@@ -72,12 +84,16 @@ def _build_conversations_payload(member):
     if not member:
         return [], {}
 
+        
     requests = list(
         SkillRequest.objects.select_related("skill", "requester", "provider")
         .filter(Q(requester=member) | Q(provider=member))
         .order_by("-created_at")
     )
 
+    for req in requests:
+        session = ServiceSession.objects.filter(request=req).first()
+        
     messages = (
         Message.objects.select_related("sender", "request")
         .filter(request__in=requests)
@@ -118,18 +134,25 @@ def _build_conversations_payload(member):
             last_message.created_at if last_message else req.created_at
         ).strftime("%b %d, %Y")
 
-        conversations.append(
-            {
-                "id": req.request_id,
-                "name": other_name,
-                "avatar": avatar,
-                "lastMessage": last_text,
-                "time": last_time,
-                "unread": 0,
-                "status": "offline",
-                "requestStatus": req.status,
-            }
-        )
+        conversations.append({
+            "id": req.request_id,
+            "name": other_name,
+            "avatar": avatar,
+            "lastMessage": last_text,
+            "time": last_time,
+            "unread": 0,
+            "status": "offline",
+            "requestStatus": req.status,
+
+            # 🔑 ADD THESE
+            "session_id": session.session_id if session else None,
+            "can_complete": (
+                session is not None
+                and session.status == "pending"
+                and req.provider_id == member.member_id
+            ),
+        })
+
 
         messages_payload[req.request_id] = [
             {
@@ -177,33 +200,96 @@ def _build_index_context(member, skills, extra=None):
         if member
         else 0
     )
+    
     completed_sessions_count = (
-        ServiceSession.objects.filter(Q(seeker=member) | Q(provider=member))
-        .filter(Q(status__iexact="accepted") | Q(status__iexact="completed"))
-        .count()
+    ServiceSession.objects.filter(
+        Q(seeker=member) | Q(provider=member),
+        status="completed",
+    ).count()
+    if member
+    else 0
+    )
+    
+    pending_sessions_count = (
+    ServiceSession.objects.filter(
+        provider=member,
+        status="pending",
+    ).count()
+    if member
+    else 0
+    )
+    
+    pending_credits = (
+        ServiceSession.objects.filter(
+            seeker=member,
+            status="pending",
+        ).aggregate(total=Sum("hours"))["total"]
         if member
         else 0
-    )
-
+        ) or 0
     context = {
         "skills": skills,
         "member": member,
         "current_member_id": member.member_id if member else None,
+        
+        # ✅ FIXED — JSON STRINGS
         "all_skills_json": skills_payload,
         "requests_json": _build_requests_payload(member),
         "conversations_json": conversations_payload,
         "messages_json": messages_payload,
+        "current_member_id": member.member_id if member else None,
         "pending_requests_count": pending_requests_count,
         "offers_count": offers_count,
         "total_requests_count": total_requests_count,
         "completed_sessions_count": completed_sessions_count,
+        "context_pending_sessions": pending_sessions_count,
+        "context_pending_credits": pending_credits,
     }
+
 
     if extra:
         context.update(extra)
 
     return context
 
+def complete_service_session(session_id, member):
+    session = get_object_or_404(ServiceSession, session_id=session_id)
+
+    if session.provider != member:
+        return {"error": "Unauthorized"}
+
+    if session.status == "completed":
+        return {"error": "Already completed"}
+
+    seeker_wallet = CreditWallet.objects.get(member=session.seeker)
+    provider_wallet = CreditWallet.objects.get(member=session.provider)
+
+    if seeker_wallet.credits < session.hours:
+        return {"error": "Seeker has insufficient credits"}
+
+    with transaction.atomic():
+        seeker_wallet.credits -= session.hours
+        provider_wallet.credits += session.hours
+
+        seeker_wallet.save()
+        provider_wallet.save()
+
+        session.status = "completed"
+        session.save()
+
+    return {"success": True}
+def get_available_credits(member):
+    wallet = CreditWallet.objects.get(member=member)
+
+    pending_hours = (
+        ServiceSession.objects.filter(
+            seeker=member,
+            status="pending"
+        ).aggregate(total=Sum("hours"))["total"]
+        or 0
+    )
+
+    return wallet.credits - pending_hours
 
 def get_logged_in_member(request):
     if not request.user.is_authenticated:
@@ -311,7 +397,6 @@ def request_skill(request):
         }
     )
 
-
 def update_request(request):
     if request.method != "POST":
         return JsonResponse({"error": "Invalid request method"}, status=405)
@@ -336,23 +421,40 @@ def update_request(request):
     if skill_request.provider != member:
         return JsonResponse({"error": "Unauthorized"}, status=403)
 
-    skill_request.status = "accepted" if action == "accept" else "declined"
-    skill_request.save()
+    if action == "accept":
+        seeker = skill_request.requester
+        required_credits = 1  
 
-    if skill_request.status == "accepted":
+        available_credits = get_available_credits(seeker)
+
+        if available_credits < required_credits:
+            return JsonResponse(
+                {
+                    "error": "Learner does not have enough credits",
+                    "available_credits": available_credits,
+                },
+                status=400,
+            )
+
+        skill_request.status = "accepted"
+        skill_request.save()
+
         ServiceSession.objects.get_or_create(
             request=skill_request,
             defaults={
                 "skill": skill_request.skill,
-                "seeker": skill_request.requester,
+                "seeker": seeker,
                 "provider": skill_request.provider,
-                "hours": 1,
-                "status": "Accepted",
+                "hours": required_credits,
+                "status": "pending",
             },
         )
 
-    return JsonResponse({"status": skill_request.status})
+    else:
+        skill_request.status = "declined"
+        skill_request.save()
 
+    return JsonResponse({"status": skill_request.status})
 
 def send_message(request):
     if request.method != "POST":
@@ -391,7 +493,6 @@ def send_message(request):
         }
     )
 
-
 def sync_data(request):
     if request.method != "GET":
         return JsonResponse({"error": "Invalid request method"}, status=405)
@@ -402,14 +503,25 @@ def sync_data(request):
 
     conversations_payload, messages_payload = _build_conversations_payload(member)
 
+    pending_credits = (
+        ServiceSession.objects.filter(
+            seeker=member,
+            status="pending"
+        ).aggregate(total=Sum("hours"))["total"]
+        or 0
+    )
+
+    wallet = CreditWallet.objects.get(member=member)
+
     return JsonResponse(
         {
             "requests": _build_requests_payload(member),
             "conversations": conversations_payload,
             "messages": messages_payload,
+            "wallet_credits": wallet.credits,
+            "pending_credits": pending_credits,
         }
     )
-
 
 
 # DELETE → Remove skill (only owner can delete)
@@ -477,14 +589,36 @@ def signup_user(request):
             password=password
         )
 
-        Member.objects.create(
+        member = Member.objects.create(
             full_name=name,
             email=email,
             location="Not set"
         )
-
+        
+        CreditWallet.objects.create(member=member, credits=10)  
+        
         login(request, user)
         return redirect("index")   # ✅ MAIN PAGE
+
+
+@csrf_exempt
+def complete_session(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Invalid request"}, status=405)
+
+    member = get_logged_in_member(request)
+    if not member:
+        return JsonResponse({"error": "Not logged in"}, status=403)
+
+    data = json.loads(request.body)
+    session_id = data.get("session_id")
+
+    result = complete_service_session(session_id, member)
+
+    if "error" in result:
+        return JsonResponse(result, status=400)
+
+    return JsonResponse({"status": "completed"})
 
 def logout_user(request):
     logout(request)

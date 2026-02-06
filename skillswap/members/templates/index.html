@@ -1,5 +1,5 @@
 {% load static %}
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" class="h-full">
   <head>
     <meta charset="UTF-8" />
@@ -10,21 +10,25 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap"
-      rel="stylesheet" />
+      rel="stylesheet"
+    />
     <script src="https://cdn.tailwindcss.com"></script>
     <link
       rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
     <script
       src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-      defer></script>
+      defer
+    ></script>
     <link rel="stylesheet" href="{% static 'css/style.css' %}" />
     <!-- <style> @view-transition { navigation: auto; }</style> -->
     <!-- <script src="{% static 'js/script.js' %}"></script> -->
   </head>
   <body
     class="h-full"
-    data-auth="{{ request.user.is_authenticated|yesno:'true,false' }}">
+    data-auth="{{ request.user.is_authenticated|yesno:'true,false' }}"
+  >
     <div class="app-wrapper gradient-mesh" id="app-wrapper">
       <!-- Auth Modal -->
       <div class="modal-overlay" id="auth-modal">
@@ -45,7 +49,8 @@
                 method="post"
                 action="{% url 'login_user' %}"
                 autocomplete="off"
-                class="space-y-4">
+                class="space-y-4"
+              >
                 {% csrf_token %}
 
                 <div>
@@ -59,7 +64,8 @@
                     id="login-email"
                     class="input-field"
                     name="email"
-                    placeholder="you@example.com" />
+                    placeholder="you@example.com"
+                  />
                 </div>
                 <div>
                   <label
@@ -73,7 +79,8 @@
                     class="input-field"
                     name="password"
                     placeholder="Enter Password"
-                    autocomplete="new-password" />
+                    autocomplete="new-password"
+                  />
                 </div>
                 <div id="login-error" class="text-red-400 text-sm hidden">
                   {% if login_error %}
@@ -87,9 +94,11 @@
                     viewbox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    stroke-width="2">
+                    stroke-width="2"
+                  >
                     <path
-                      d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3" />
+                      d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"
+                    />
                   </svg>
                   Sign In
                 </button>
@@ -104,7 +113,8 @@
             <!-- Signup Side -->
             <div
               class="flex-1 p-8"
-              style="background: rgba(99, 102, 241, 0.02)">
+              style="background: rgba(99, 102, 241, 0.02)"
+            >
               <div class="mb-8">
                 <h2 class="text-2xl font-bold mb-2">Create Account</h2>
                 <p class="text-sm opacity-60">
@@ -115,7 +125,8 @@
                 method="post"
                 action="{% url 'signup_user' %}"
                 autocomplete="off"
-                class="space-y-4">
+                class="space-y-4"
+              >
                 {% csrf_token %}
 
                 <div>
@@ -128,7 +139,8 @@
                     class="input-field"
                     placeholder="John Doe"
                     autocomplete="name"
-                    required />
+                    required
+                  />
                 </div>
 
                 <div>
@@ -139,7 +151,8 @@
                     class="input-field"
                     placeholder="you@example.com"
                     autocomplete="email"
-                    required />
+                    required
+                  />
                 </div>
 
                 <div>
@@ -150,7 +163,8 @@
                     class="input-field"
                     placeholder="Enter Password"
                     autocomplete="new-password"
-                    required />
+                    required
+                  />
                 </div>
 
                 <button type="submit" class="btn btn-secondary w-full">
@@ -168,7 +182,8 @@
       <nav class="mobile-menu" id="mobile-menu">
         <button
           class="nav-item mobile-nav-item text-left"
-          data-page="dashboard">
+          data-page="dashboard"
+        >
           <span class="flex items-center gap-3">
             <svg
               width="20"
@@ -176,7 +191,8 @@
               viewbox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              stroke-width="2">
+              stroke-width="2"
+            >
               <rect x="3" y="3" width="7" height="7" />
               <rect x="14" y="3" width="7" height="7" />
               <rect x="14" y="14" width="7" height="7" />
@@ -187,7 +203,8 @@
         </button>
         <button
           class="nav-item mobile-nav-item text-left"
-          data-page="find-skill">
+          data-page="find-skill"
+        >
           <span class="flex items-center gap-3">
             <svg
               width="20"
@@ -195,7 +212,8 @@
               viewbox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              stroke-width="2">
+              stroke-width="2"
+            >
               <circle cx="11" cy="11" r="8" />
               <path d="m21 21-4.35-4.35" />
             </svg>
@@ -204,7 +222,8 @@
         </button>
         <button
           class="nav-item mobile-nav-item text-left"
-          data-page="offer-skill">
+          data-page="offer-skill"
+        >
           <span class="flex items-center gap-3">
             <svg
               width="20"
@@ -212,7 +231,8 @@
               viewbox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              stroke-width="2">
+              stroke-width="2"
+            >
               <path d="M12 2v20M2 12h20" />
             </svg>
             Offer a Skill
@@ -226,7 +246,8 @@
               viewbox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              stroke-width="2">
+              stroke-width="2"
+            >
               <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
             </svg>
             Requests
@@ -240,9 +261,11 @@
               viewbox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              stroke-width="2">
+              stroke-width="2"
+            >
               <path
-                d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+              />
             </svg>
             Messages
           </span>
@@ -251,21 +274,24 @@
       <!-- Topbar -->
       <header class="topbar" id="topbar">
         <div
-          class="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto">
+          class="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto"
+        >
           <!-- Left: Logo -->
           <div class="flex items-center gap-3">
             <button
               class="mobile-menu-btn p-2 rounded-lg hover:bg-white/5 lg:hidden"
               id="mobile-menu-btn"
               style="display: none"
-              aria-label="Toggle menu">
+              aria-label="Toggle menu"
+            >
               <svg
                 width="24"
                 height="24"
                 viewbox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                stroke-width="2">
+                stroke-width="2"
+              >
                 <line x1="3" y1="12" x2="21" y2="12" />
                 <line x1="3" y1="6" x2="21" y2="6" />
                 <line x1="3" y1="18" x2="21" y2="18" />
@@ -273,14 +299,16 @@
             </button>
             <div class="flex items-center gap-2">
               <div
-                class="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
+                class="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center"
+              >
                 <svg
                   width="18"
                   height="18"
                   viewbox="0 0 24 24"
                   fill="none"
                   stroke="white"
-                  stroke-width="2.5">
+                  stroke-width="2.5"
+                >
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                   <circle cx="9" cy="7" r="4" />
                   <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
@@ -297,7 +325,8 @@
           <!-- Center: Navigation -->
           <nav
             class="desktop-nav flex items-center gap-1 hidden md:flex"
-            id="desktop-nav">
+            id="desktop-nav"
+          >
             <button class="nav-item active" data-page="dashboard">
               Dashboard
             </button>
@@ -320,12 +349,19 @@
                 viewbox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                stroke-width="2">
+                stroke-width="2"
+              >
                 <circle cx="12" cy="12" r="10" />
-                <path d="M12 6v12M8 10h8M8 14h8" /></svg
-              ><span id="total-credits">25</span>
-              <span class="opacity-50">|</span>
-              <span class="text-yellow-400" id="pending-credits">+3</span>
+                <path d="M12 6v12M8 10h8M8 14h8" />
+              </svg>
+              Available
+              <div class="pill glass">
+                <span id="total-credits"
+                  >{{ member.creditwallet.credits}}</span
+                >
+                <!-- <span class="opacity-50">|</span> -->
+                <!-- <span class="text-yellow-400"> -{{ context_pending_credits }} </span> -->
+              </div>
             </div>
             <!-- User -->
             <div class="flex items-center gap-2">
@@ -342,14 +378,16 @@
 
               <a
                 href="{% url 'logout_user' %}"
-                class="btn-ghost px-2 py-1 rounded-lg text-sm">
+                class="btn-ghost px-2 py-1 rounded-lg text-sm"
+              >
                 <svg
                   width="16"
                   height="16"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  stroke-width="2">
+                  stroke-width="2"
+                >
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                   <polyline points="16,17 21,12 16,7" />
                   <line x1="21" y1="12" x2="9" y2="12" />
@@ -373,7 +411,15 @@
               <p
                 class="opacity-60"
                 id="pending-requests-line"
-                {% if not pending_requests_count %}style="display: none"{% endif %}>
+                {%
+                if
+                not
+                pending_requests_count
+                %}style="display: none"
+                {%
+                endif
+                %}
+              >
                 You have
                 <span class="text-yellow-400" id="pending-requests-count"
                   >{{ pending_requests_count|default:0 }}</span
@@ -384,10 +430,12 @@
             <!-- Hero Cards -->
             <div
               class="hero-cards grid grid-cols-2 gap-4 mb-8"
-              style="animation-delay: 0.1s">
+              style="animation-delay: 0.1s"
+            >
               <div
                 class="hero-card gradient-primary cursor-pointer hover:scale-[1.02] transition-transform"
-                onclick="navigateTo('offer-skill')">
+                onclick="navigateTo('offer-skill')"
+              >
                 <div class="relative z-10">
                   <svg
                     width="48"
@@ -396,7 +444,8 @@
                     fill="none"
                     stroke="white"
                     stroke-width="1.5"
-                    class="mb-4 opacity-80">
+                    class="mb-4 opacity-80"
+                  >
                     <circle cx="12" cy="12" r="10" />
                     <path d="M12 8v8M8 12h8" />
                   </svg>
@@ -409,7 +458,8 @@
               </div>
               <div
                 class="hero-card gradient-secondary cursor-pointer hover:scale-[1.02] transition-transform"
-                onclick="navigateTo('find-skill')">
+                onclick="navigateTo('find-skill')"
+              >
                 <div class="relative z-10">
                   <svg
                     width="48"
@@ -418,7 +468,8 @@
                     fill="none"
                     stroke="white"
                     stroke-width="1.5"
-                    class="mb-4 opacity-80">
+                    class="mb-4 opacity-80"
+                  >
                     <circle cx="11" cy="11" r="8" />
                     <path d="m21 21-4.35-4.35" />
                   </svg>
@@ -433,14 +484,16 @@
             <!-- Dashboard Grid -->
             <div
               class="dashboard-grid grid grid-cols-3 gap-6"
-              style="animation-delay: 0.2s">
+              style="animation-delay: 0.2s"
+            >
               <!-- My Offered Skills -->
               <div class="col-span-2 card p-6">
                 <div class="flex items-center justify-between mb-6">
                   <h3 class="text-lg font-semibold">My Offered Skills</h3>
                   <button
                     class="btn btn-ghost text-sm"
-                    onclick="navigateTo('offer-skill')">
+                    onclick="navigateTo('offer-skill')"
+                  >
                     + Add New
                   </button>
                 </div>
@@ -457,7 +510,8 @@
                       <!-- DELETE -->
                       <a
                         href="{% url 'delete_skill' skill.skill_id %}"
-                        class="text-red-400 text-sm hover:underline">
+                        class="text-red-400 text-sm hover:underline"
+                      >
                         Delete
                       </a>
                     </div>
@@ -475,7 +529,8 @@
                   <div class="stat-card">
                     <div
                       class="text-3xl font-bold text-primary-color"
-                      id="stat-offers">
+                      id="stat-offers"
+                    >
                       {{ offers_count|default:0 }}
                     </div>
                     <div class="text-sm opacity-60">Active Offers</div>
@@ -483,7 +538,8 @@
                   <div class="stat-card">
                     <div
                       class="text-3xl font-bold text-cyan-400"
-                      id="stat-requests">
+                      id="stat-requests"
+                    >
                       {{ total_requests_count|default:0 }}
                     </div>
                     <div class="text-sm opacity-60">Total Requests</div>
@@ -491,7 +547,8 @@
                   <div class="stat-card">
                     <div
                       class="text-3xl font-bold text-green-400"
-                      id="stat-completed">
+                      id="stat-completed"
+                    >
                       {{ completed_sessions_count|default:0 }}
                     </div>
                     <div class="text-sm opacity-60">Completed Sessions</div>
@@ -521,7 +578,8 @@
                       id="search-input"
                       class="input-field pl-10"
                       placeholder="What do you want to learn?"
-                      value="{{ request.GET.q }}" />
+                      value="{{ request.GET.q }}"
+                    />
                     <button type="submit" class="btn btn-primary mt-2 w-full">
                       Search
                     </button>
@@ -538,7 +596,8 @@
                       min="1"
                       max="50"
                       value="10"
-                      oninput="getUserLocation()" />
+                      oninput="getUserLocation()"
+                    />
                     <div class="flex justify-between text-sm opacity-60">
                       <span>1 km</span>
                       <span
@@ -611,7 +670,8 @@
                     class="input-field"
                     rows="2"
                     maxlength="250"
-                    placeholder="Add a short note to start the chat..."></textarea>
+                    placeholder="Add a short note to start the chat..."
+                  ></textarea>
                   <div class="text-xs opacity-50 mt-2">
                     This note becomes the first message in the chat.
                   </div>
@@ -640,7 +700,8 @@
                   method="post"
                   action="{% url 'add_skill' %}"
                   id="offer-form"
-                  class="space-y-6">
+                  class="space-y-6"
+                >
                   {% csrf_token %}
                   <div>
                     <label
@@ -651,7 +712,8 @@
                     <select
                       id="offer-category"
                       name="category"
-                      class="input-field">
+                      class="input-field"
+                    >
                       <option value="">Select a category</option>
                       <option value="education">Education</option>
                       <option value="technology">Technology</option>
@@ -672,7 +734,8 @@
                       name="skill_name"
                       class="input-field"
                       required
-                      placeholder="e.g., Guitar Lessons, Web Development" />
+                      placeholder="e.g., Guitar Lessons, Web Development"
+                    />
                   </div>
                   <div>
                     <label
@@ -687,7 +750,8 @@
                       rows="4"
                       required
                       placeholder="Describe what you'll teach and your experience..."
-                      maxlength="500"></textarea>
+                      maxlength="500"
+                    ></textarea>
                     <div class="char-counter" id="description-counter">
                       0/500
                     </div>
@@ -696,9 +760,7 @@
                     <label class="block text-sm font-medium mb-2"
                       >Location</label
                     >
-                    <div
-                      class="text-sm opacity-60"
-                      id="offer-location-status">
+                    <div class="text-sm opacity-60" id="offer-location-status">
                       Detecting your location...
                     </div>
                     <input type="hidden" id="offer-lat" name="latitude" />
@@ -715,7 +777,8 @@
                         class="range-slider"
                         min="1"
                         max="5"
-                        value="3" />
+                        value="3"
+                      />
                       <div class="flex justify-between text-sm">
                         <span class="opacity-60">Novice</span>
                         <span
@@ -740,12 +803,14 @@
                         id="offer-rate"
                         class="input-field"
                         value="1"
-                        disabled />
+                        disabled
+                      />
                       <input
                         type="hidden"
                         id="offer-rate-hidden"
                         name="rate"
-                        value="1" />
+                        value="1"
+                      />
                     </div>
                     <div>
                       <label class="block text-sm font-medium mb-2"
@@ -755,13 +820,15 @@
                         <button
                           type="button"
                           class="chip active"
-                          data-session="in-person">
+                          data-session="in-person"
+                        >
                           In-person
                         </button>
                         <button
                           type="button"
                           class="chip"
-                          data-session="online">
+                          data-session="online"
+                        >
                           Online
                         </button>
                       </div>
@@ -803,7 +870,8 @@
                         viewbox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
-                        stroke-width="2">
+                        stroke-width="2"
+                      >
                         <path d="M12 2v20M2 12h20" />
                       </svg>
                       Publish Skill Offer
@@ -838,7 +906,8 @@
                 fill="none"
                 stroke="currentColor"
                 stroke-width="1.5"
-                class="mx-auto">
+                class="mx-auto"
+              >
                 <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
               </svg>
               <p>No requests yet</p>
@@ -854,16 +923,19 @@
             </div>
             <div
               class="card overflow-hidden"
-              style="height: calc(100% - 120px); min-height: 500px">
+              style="height: calc(100% - 120px); min-height: 500px"
+            >
               <div class="flex h-full">
                 <!-- Conversations List -->
                 <div
-                  class="message-list-panel w-80 border-r border-white/5 flex flex-col">
+                  class="message-list-panel w-80 border-r border-white/5 flex flex-col"
+                >
                   <div class="p-4 border-b border-white/5">
                     <input
                       type="text"
                       class="input-field"
-                      placeholder="Search messages..." />
+                      placeholder="Search messages..."
+                    />
                   </div>
                   <div class="flex-1 overflow-auto" id="conversations-list">
                     <!-- Conversations will be rendered here -->
@@ -873,18 +945,21 @@
                 <div class="flex-1 flex flex-col">
                   <div
                     class="p-4 border-b border-white/5 flex items-center gap-3"
-                    id="chat-header">
+                    id="chat-header"
+                  >
                     <button
                       class="lg:hidden p-2 rounded-lg hover:bg-white/5"
                       id="back-to-list"
-                      aria-label="Back to list">
+                      aria-label="Back to list"
+                    >
                       <svg
                         width="20"
                         height="20"
                         viewbox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
-                        stroke-width="2">
+                        stroke-width="2"
+                      >
                         <path d="m15 18-6-6 6-6" />
                       </svg>
                     </button>
@@ -900,7 +975,8 @@
                   </div>
                   <div
                     class="flex-1 overflow-auto p-4 space-y-4"
-                    id="chat-messages">
+                    id="chat-messages"
+                  >
                     <div class="text-center opacity-40 py-8">
                       <svg
                         width="48"
@@ -909,9 +985,11 @@
                         fill="none"
                         stroke="currentColor"
                         stroke-width="1.5"
-                        class="mx-auto mb-2 opacity-30">
+                        class="mx-auto mb-2 opacity-30"
+                      >
                         <path
-                          d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                          d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                        />
                       </svg>
                       <p>Select a conversation to start messaging</p>
                     </div>
@@ -922,7 +1000,8 @@
                         type="text"
                         id="message-input"
                         class="input-field flex-1"
-                        placeholder="Type a message..." />
+                        placeholder="Type a message..."
+                      />
                       <button class="btn btn-primary" id="send-message-btn">
                         <svg
                           width="18"
@@ -930,7 +1009,8 @@
                           viewbox="0 0 24 24"
                           fill="none"
                           stroke="currentColor"
-                          stroke-width="2">
+                          stroke-width="2"
+                        >
                           <line x1="22" y1="2" x2="11" y2="13" />
                           <polygon points="22 2 15 22 11 13 2 9 22 2" />
                         </svg>
@@ -951,21 +1031,22 @@
     {{ requests_json|json_script:"requests-data" }}
     {{ conversations_json|json_script:"conversations-data" }}
     {{ messages_json|json_script:"messages-data" }}
+
     <script>
       window.SKILLSWAP_SERVER_SKILLS = JSON.parse(
-        document.getElementById("skills-data").textContent
+        document.getElementById("skills-data").textContent,
       );
       window.SKILLSWAP_CURRENT_MEMBER_ID = JSON.parse(
-        document.getElementById("member-id").textContent
+        document.getElementById("member-id").textContent,
       );
       window.SKILLSWAP_SERVER_REQUESTS = JSON.parse(
-        document.getElementById("requests-data").textContent
+        document.getElementById("requests-data").textContent,
       );
       window.SKILLSWAP_SERVER_CONVERSATIONS = JSON.parse(
-        document.getElementById("conversations-data").textContent
+        document.getElementById("conversations-data").textContent,
       );
       window.SKILLSWAP_SERVER_MESSAGES = JSON.parse(
-        document.getElementById("messages-data").textContent
+        document.getElementById("messages-data").textContent,
       );
     </script>
     <script src="{% static 'js/script.js' %}"></script>

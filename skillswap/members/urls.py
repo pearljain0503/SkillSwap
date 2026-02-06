@@ -9,6 +9,7 @@ urlpatterns = [
     path('update-request/', views.update_request, name='update_request'),
     path('send-message/', views.send_message, name='send_message'),
     path('sync-data/', views.sync_data, name='sync_data'),
+    path("complete-session/", views.complete_session, name="complete_session"),
 
     path('login/', views.login_user, name='login_user'),
     path('signup/', views.signup_user, name='signup_user'),

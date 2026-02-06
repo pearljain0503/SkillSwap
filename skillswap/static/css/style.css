@@ -592,10 +592,10 @@ appearance: none;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
-body[data-auth="false"] #desktop-nav,
+/* body[data-auth="false"] #desktop-nav,
 body[data-auth="false"] #topbar-actions {
   display: none !important;
-}
+} */
 
 .mobile-menu {
   position: fixed;
@@ -621,3 +621,23 @@ body[data-auth="false"] #topbar-actions {
 .modal-overlay:not(.active), .mobile-menu:not(.active) { pointer-events: none; }
 
 .hero-card > * { position: relative; z-index: 2; }
+
+/* 🔒 AUTH MODE — ONLY LOGO VISIBLE */
+
+body.auth-open .app-wrapper > main,
+body.auth-open .desktop-nav,
+body.auth-open #topbar-actions,
+body.auth-open .mobile-menu {
+  display: none !important;
+}
+
+/* Center logo correctly */
+body.auth-open .topbar > div {
+  justify-content: left;
+}
+
+/* Hide nav inside topbar */
+body.auth-open .topbar nav {
+  display: none !important;
+}
+
