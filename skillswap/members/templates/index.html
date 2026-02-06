@@ -249,7 +249,7 @@
         </button>
       </nav>
       <!-- Topbar -->
-      <header class="topbar">
+      <header class="topbar" id="topbar">
         <div
           class="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto">
           <!-- Left: Logo -->
@@ -295,7 +295,9 @@
             </div>
           </div>
           <!-- Center: Navigation -->
-          <nav class="desktop-nav flex items-center gap-1 hidden md:flex">
+          <nav
+            class="desktop-nav flex items-center gap-1 hidden md:flex"
+            id="desktop-nav">
             <button class="nav-item active" data-page="dashboard">
               Dashboard
             </button>
@@ -309,7 +311,7 @@
             <button class="nav-item" data-page="messages">Messages</button>
           </nav>
           <!-- Right: Credits & User -->
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-3" id="topbar-actions">
             <!-- Credits -->
             <div class="pill glass">
               <svg
