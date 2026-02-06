@@ -31,9 +31,11 @@ def _build_requests_payload(member):
         return []
 
     requests_payload = []
+
     incoming = SkillRequest.objects.select_related(
         "skill", "requester", "provider"
     ).filter(provider=member)
+
     outgoing = SkillRequest.objects.select_related(
         "skill", "requester", "provider"
     ).filter(requester=member)
@@ -42,43 +44,43 @@ def _build_requests_payload(member):
         name = (name or "").strip()
         return name[0].upper() if name else "?"
 
+    # ✅ INCOMING REQUESTS
     for req in incoming:
         session = ServiceSession.objects.filter(request=req).first()
 
-    requests_payload.append({
-        "id": req.request_id,
-        "type": "incoming",
-        "skill": req.skill.skill_name,
-        "from": req.requester.full_name,
-        "avatar": safe_avatar(req.requester.full_name),
-        "status": req.status,
-        "date": req.created_at.strftime("%b %d, %Y"),
-        "message": req.note or "Wants to learn your skill.",
-        "session_id": session.session_id if session else None,
-        "can_complete": (
-            session is not None and
-            session.status == "pending" and
-            req.provider == member
-        ),
-    })
+        requests_payload.append({
+            "id": req.request_id,
+            "type": "incoming",
+            "skill": req.skill.skill_name,
+            "from": req.requester.full_name,
+            "avatar": safe_avatar(req.requester.full_name),
+            "status": req.status,
+            "date": req.created_at.strftime("%b %d, %Y"),
+            "message": req.note or "Wants to learn your skill.",
+            "session_id": session.session_id if session else None,
+            "can_complete": (
+                session is not None
+                and session.status == "pending"
+                and req.provider == member
+            ),
+        })
 
-
+    # ✅ OUTGOING REQUESTS
     for req in outgoing:
-        requests_payload.append(
-            {
-                "id": req.request_id,
-                "type": "outgoing",
-                "skill": req.skill.skill_name if req.skill else "Skill",
-                "to": req.provider.full_name if req.provider else "Unknown",
-                "avatar": safe_avatar(req.provider.full_name if req.provider else ""),
-                "status": req.status,
-                "date": req.created_at.strftime("%b %d, %Y"),
-                "message": req.note or "You requested this skill.",
-            }
-        )
+        requests_payload.append({
+            "id": req.request_id,
+            "type": "outgoing",
+            "skill": req.skill.skill_name if req.skill else "Skill",
+            "to": req.provider.full_name if req.provider else "Unknown",
+            "avatar": safe_avatar(
+                req.provider.full_name if req.provider else ""
+            ),
+            "status": req.status,
+            "date": req.created_at.strftime("%b %d, %Y"),
+            "message": req.note or "You requested this skill.",
+        })
 
     return requests_payload
-
 
 def _build_conversations_payload(member):
     if not member:
@@ -501,28 +503,24 @@ def sync_data(request):
     if not member:
         return JsonResponse({"error": "Not logged in"}, status=403)
 
-    conversations_payload, messages_payload = _build_conversations_payload(member)
+    wallet = CreditWallet.objects.get(member=member)
 
     pending_credits = (
         ServiceSession.objects.filter(
             seeker=member,
             status="pending"
-        ).aggregate(total=Sum("hours"))["total"]
-        or 0
+        ).aggregate(total=Sum("hours"))["total"] or 0
     )
 
-    wallet = CreditWallet.objects.get(member=member)
+    conversations_payload, messages_payload = _build_conversations_payload(member)
 
-    return JsonResponse(
-        {
-            "requests": _build_requests_payload(member),
-            "conversations": conversations_payload,
-            "messages": messages_payload,
-            "wallet_credits": wallet.credits,
-            "pending_credits": pending_credits,
-        }
-    )
-
+    return JsonResponse({
+        "requests": _build_requests_payload(member),
+        "conversations": conversations_payload,
+        "messages": messages_payload,
+        "wallet_credits": wallet.credits,
+        "pending_credits": pending_credits,
+    })
 
 # DELETE → Remove skill (only owner can delete)
 def delete_skill(request, skill_id):
